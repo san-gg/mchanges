@@ -5,8 +5,16 @@
 #include "node.h"
 #include "grammar.h"
 
-JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0),
+JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0), importShift(0),
 										ignoreGrammar(JavaIgnoreGrammar::grammar::NONE) { }
+
+void JavaIgnoreGrammar::clearState() {
+	this->staticShift = 0;
+	this->annotationShift = 0;
+	this->assignmentShift = 0;
+	this->importShift = 0;
+	this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
+}
 
 void JavaIgnoreGrammar::checkStatic(const std::string& token) {
 	int cmp1 = token.compare("static");
@@ -31,25 +39,44 @@ void JavaIgnoreGrammar::checkAnnotation(const std::string& token) {
 	else if (this->annotationShift == 1)
 		this->annotationShift = 2;
 }
+void JavaIgnoreGrammar::checkImport(const std::string& token) {
+	int cmp1 = token.compare("import");
+	int cmp2 = token.compare(";");
+	if (this->importShift == 1 && cmp1 == 0)
+		throw yy::parser::syntax_error("Invalid import statement");
+	else if (this->importShift == 0 && cmp1 == 0)
+		this->importShift = 1;
+	else if (this->importShift == 1 && cmp2 == 0)
+		this->importShift = 2;
+}
 
 int JavaIgnoreGrammar::checkGrammar(const std::string &token) {
 	// Accept and shift tokens
 	checkStatic(token);
 	checkAssignment(token);
 	checkAnnotation(token);
+	checkImport(token);
 
 
 	// Check accepted grammar
 	if (this->staticShift == 2) {
+		clearState();
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::StaticBlock;
 		return 1;
 	}
 	else if (this->annotationShift == 2) {
+		clearState();
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Annotation;
 		return 1;
 	}
 	else if (this->assignmentShift == 1) {
+		clearState();
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Assignment;
+		return 1;
+	}
+	else if (this->importShift == 2) {
+		clearState();
+		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Imports;
 		return 1;
 	}
 
@@ -60,10 +87,7 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token) {
 		token.compare("}") == 0 ||
 		(this->staticShift == 0 && token.compare("{") == 0))
 	{
-		this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
-		this->staticShift = 0;
-		this->annotationShift = 0;
-		this->assignmentShift = 0;
+		clearState();
 		return -1;
 	}
 
@@ -78,6 +102,9 @@ bool JavaIgnoreGrammar::isAssignment() {
 }
 bool JavaIgnoreGrammar::isAnnotation() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Annotation;
+}
+bool JavaIgnoreGrammar::isImport() {
+	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Imports;
 }
 
 Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0) {
@@ -206,6 +233,7 @@ bool Tokenizer::addTokenBuffer() {
 					if (this->ignoreGrammar.isStatic()) skipBlock();
 					else if (this->ignoreGrammar.isAssignment()) skipAssignment();
 					else if (this->ignoreGrammar.isAnnotation()) skipAnnotation();
+					else if (this->ignoreGrammar.isImport()) this->tokenItr++;
 				}
 				else
 					this->tokenItr++;
