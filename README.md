@@ -1,2 +1,3 @@
 # mchanges
-For the java language, mchanges detects changed methods between two git tags(Java codebase) and consolidates results into csv/xlsx
+mchanges detects list of changed methods between two Java files and consolidates results into csv/xlsx
+### Inprogress...
