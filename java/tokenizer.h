@@ -21,33 +21,42 @@ class JavaIgnoreGrammar {
 		Assignment  : STRINGS '='
 		StaticBlock : 'static' '{'
 		Annotation  : '@' STRINGS
-		import		: import STRINGS ;
+		import		: import STRINGS ';'
+		IIB			: '{'
+		STRINGS		: Text
+					| <
+					| ,
+					| >
 		//~~Simple~~
 	*/
 	int staticShift;
 	int assignmentShift;
 	int annotationShift;
 	int importShift;
+	int iibShift;
 	enum class grammar {
 		NONE = 0,
 		StaticBlock = 1,
 		Assignment = 2,
 		Annotation = 3,
-		Imports = 4
+		Imports = 4,
+		IIB = 5
 	} ignoreGrammar;
 
 	void checkStatic(const std::string&);
 	void checkAssignment(const std::string&);
 	void checkAnnotation(const std::string&);
 	void checkImport(const std::string&);
+	void checkIIB(const std::string&, int);
 	void clearState();
 public:
 	JavaIgnoreGrammar();
-	int checkGrammar(const std::string&);
+	int checkGrammar(const std::string&, int);
 	bool isStatic();
 	bool isAssignment();
 	bool isAnnotation();
 	bool isImport();
+	bool isIIB();
 };
 
 class Tokenizer {

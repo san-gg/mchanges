@@ -31,7 +31,7 @@ JAVA : CLASS_HEADER O_BRACE C_BRACE	{ jLang = new JavaLang($1); YYACCEPT; }
 
 CLASS_HEADER : MODIFIERS CLASS_NAME		{ $$ = $2; $$->setModifier($1); }
 			| CLASS_NAME				{ $$ = $1; }
-			| CLASS_HEADER STRINGS		{ $$ = $1; }
+			| CLASS_HEADER STRINGS		{ $$ = $1; delete $2; }
 			| CLASS_HEADER COMMA		{ $$ = $1; }
 			;
 
@@ -40,8 +40,7 @@ CLASS_NAME : T_CLASS STRINGS	{ $$ = new JavaClassHeader($2); }
 			;
 
 
-MODIFIERS : MODIFIERS SCOPE				{ $1->setScope($2); $$ = $1; }
-			| MODIFIERS STATIC			{ $1->setStatic(); $$ = $1; }
+MODIFIERS : MODIFIERS STATIC			{ $1->setStatic(); $$ = $1; }
 			| MODIFIERS ABSTRACT		{ $1->setAbstract(); $$ = $1; }
 			| MODIFIERS STRICTFP		{ $1->setStrictfp(); $$ = $1; }
 			| MODIFIERS SYNCHRONIZED	{ $1->setSynchronized(); $$ = $1;}

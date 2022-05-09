@@ -16,6 +16,7 @@ std::string JavaClassHeader::getClassName() {
 	return this->className;
 }
 void JavaClassHeader::setModifier(JavaModifiers* mod) { this->mod = mod; }
+JavaModifiers* JavaClassHeader::getModifiers() { return this->mod; }
 JavaClassHeader::~JavaClassHeader() {
 	this->className.clear();
 	if (this->mod != nullptr) delete this->mod;

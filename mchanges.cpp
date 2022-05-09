@@ -45,10 +45,14 @@ int main() {
 		std::cerr << "Something went wrong\n";
 	}
 	if (jLang != nullptr) {
-		std::string temp;
+		char temp;
 		std::cout << "Finally you did it press enter for success...";
 		std::cin >> temp;
-		std::cout << "Class Name : " << jLang->getClassHeader()->getClassName() << std::endl;
+		std::cout << "Class Name : ";
+		if (jLang->getClassHeader()->getModifiers() != nullptr) {
+			std::cout << *(jLang->getClassHeader()->getModifiers()->getScope()) << " ";
+		}
+		std::cout << jLang->getClassHeader()->getClassName() << std::endl;
 		delete jLang;
 	}
 	parser.closeFile();

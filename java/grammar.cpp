@@ -37,11 +37,7 @@
 
 // First part of user prologue.
 
-
-
 #include "grammar.h"
-
-
 JavaLang* jLang = nullptr;
 
 
@@ -561,7 +557,7 @@ namespace yy {
     break;
 
   case 5:
-                                                        { (yylhs.value.classHeader) = (yystack_[1].value.classHeader); }
+                                                        { (yylhs.value.classHeader) = (yystack_[1].value.classHeader); delete (yystack_[0].value.str); }
     break;
 
   case 6:
@@ -573,66 +569,62 @@ namespace yy {
     break;
 
   case 8:
-                                                        { (yystack_[1].value.modifiers)->setScope((yystack_[0].value.scope)); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+                                                { (yystack_[1].value.modifiers)->setStatic(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
   case 9:
-                                                                { (yystack_[1].value.modifiers)->setStatic(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
-    break;
-
-  case 10:
                                                         { (yystack_[1].value.modifiers)->setAbstract(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 11:
+  case 10:
                                                         { (yystack_[1].value.modifiers)->setStrictfp(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 12:
+  case 11:
                                                         { (yystack_[1].value.modifiers)->setSynchronized(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers);}
     break;
 
-  case 13:
+  case 12:
                                                                 { (yystack_[1].value.modifiers)->setNative(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 14:
+  case 13:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); }
     break;
 
-  case 15:
+  case 14:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStatic(); }
     break;
 
-  case 16:
+  case 15:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setAbstract(); }
     break;
 
-  case 17:
+  case 16:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStrictfp(); }
     break;
 
-  case 18:
+  case 17:
                                                                 { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setSynchronized(); }
     break;
 
-  case 19:
+  case 18:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setNative(); }
     break;
 
-  case 20:
+  case 19:
                                 { (yylhs.value.scope) = new JavaScope("public"); }
     break;
 
-  case 21:
+  case 20:
                                         { (yylhs.value.scope) = new JavaScope("private"); }
     break;
 
-  case 22:
+  case 21:
                                         { (yylhs.value.scope) = new JavaScope("protected"); }
     break;
 
-  case 23:
+  case 22:
                                         { (yylhs.value.scope) = new JavaScope("default"); }
     break;
 
@@ -821,22 +813,22 @@ namespace yy {
   parser::yypact_[] =
   {
       -4,   -15,   -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16,
-     -16,    12,    -3,   -16,    10,   -16,   -16,   -16,    22,   -16,
-     -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16
+     -16,    12,    -3,   -16,    10,   -16,   -16,   -16,    18,   -16,
+     -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16
   };
 
   const signed char
   parser::yydefact_[] =
   {
-       0,     0,    15,    16,    17,    18,    19,    20,    21,    22,
-      23,     0,     0,     4,     0,    14,     7,     1,     0,     6,
-       5,     9,    10,    11,    12,    13,     3,     8,     2
+       0,     0,    14,    15,    16,    17,    18,    19,    20,    21,
+      22,     0,     0,     4,     0,    13,     7,     1,     0,     6,
+       5,     8,     9,    10,    11,    12,     3,     2
   };
 
   const signed char
   parser::yypgoto_[] =
   {
-     -16,   -16,   -16,     2,   -16,    13
+     -16,   -16,   -16,     2,   -16,   -16
   };
 
   const signed char
@@ -850,7 +842,7 @@ namespace yy {
   {
       18,     1,    16,     2,     3,     4,     5,     6,     7,     8,
        9,    10,    17,    19,    20,     1,    26,    21,    22,    23,
-      24,    25,     7,     8,     9,    10,    28,    27
+      24,    25,    27
   };
 
   const signed char
@@ -858,7 +850,7 @@ namespace yy {
   {
        3,     5,    17,     7,     8,     9,    10,    11,    12,    13,
       14,    15,     0,    16,    17,     5,    14,     7,     8,     9,
-      10,    11,    12,    13,    14,    15,     4,    14
+      10,    11,     4
   };
 
   const signed char
@@ -866,23 +858,23 @@ namespace yy {
   {
        0,     5,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    19,    20,    21,    22,    23,    17,     0,     3,    16,
-      17,     7,     8,     9,    10,    11,    21,    23,     4
+      17,     7,     8,     9,    10,    11,    21,     4
   };
 
   const signed char
   parser::yyr1_[] =
   {
        0,    18,    19,    20,    20,    20,    20,    21,    22,    22,
-      22,    22,    22,    22,    22,    22,    22,    22,    22,    22,
-      23,    23,    23,    23
+      22,    22,    22,    22,    22,    22,    22,    22,    22,    23,
+      23,    23,    23
   };
 
   const signed char
   parser::yyr2_[] =
   {
        0,     2,     3,     2,     1,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1
+       2,     2,     2,     1,     1,     1,     1,     1,     1,     1,
+       1,     1,     1
   };
 
 
@@ -903,8 +895,8 @@ namespace yy {
   parser::yyrline_[] =
   {
        0,    28,    28,    32,    33,    34,    35,    39,    43,    44,
-      45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
-      57,    58,    59,    60
+      45,    46,    47,    48,    49,    50,    51,    52,    53,    56,
+      57,    58,    59
   };
 
   // Print the state stack on the debug stream.

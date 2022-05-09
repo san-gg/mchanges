@@ -23,6 +23,7 @@ public:
 	JavaClassHeader(std::string*);
 	std::string getClassName();
 	void setModifier(JavaModifiers*);
+	JavaModifiers* getModifiers();
 	~JavaClassHeader();
 };
 

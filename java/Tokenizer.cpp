@@ -5,7 +5,8 @@
 #include "node.h"
 #include "grammar.h"
 
-JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0), importShift(0),
+JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0),
+										importShift(0), iibShift(0),
 										ignoreGrammar(JavaIgnoreGrammar::grammar::NONE) { }
 
 void JavaIgnoreGrammar::clearState() {
@@ -13,6 +14,7 @@ void JavaIgnoreGrammar::clearState() {
 	this->annotationShift = 0;
 	this->assignmentShift = 0;
 	this->importShift = 0;
+	this->iibShift = 0;
 	this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
 }
 
@@ -49,13 +51,19 @@ void JavaIgnoreGrammar::checkImport(const std::string& token) {
 	else if (this->importShift == 1 && cmp2 == 0)
 		this->importShift = 2;
 }
+void JavaIgnoreGrammar::checkIIB(const std::string& token, int tokenBlockSize) {
+	int cmp = token.compare("{");
+	if (this->iibShift == 0 && tokenBlockSize == 1 && cmp == 0)
+		this->iibShift = 1;
+}
 
-int JavaIgnoreGrammar::checkGrammar(const std::string &token) {
+int JavaIgnoreGrammar::checkGrammar(const std::string &token, int tokenBlockSize) {
 	// Accept and shift tokens
 	checkStatic(token);
 	checkAssignment(token);
 	checkAnnotation(token);
 	checkImport(token);
+	checkIIB(token, tokenBlockSize);
 
 
 	// Check accepted grammar
@@ -79,11 +87,15 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token) {
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Imports;
 		return 1;
 	}
+	else if (this->iibShift == 1) {
+		clearState();
+		this->ignoreGrammar = JavaIgnoreGrammar::grammar::IIB;
+		return 1;
+	}
 
 	// Check unaccepted grammar
 	if (token.compare("(") == 0 ||
 		token.compare(")") == 0 ||
-		token.compare(",") == 0 ||
 		token.compare("}") == 0 ||
 		(this->staticShift == 0 && token.compare("{") == 0))
 	{
@@ -105,6 +117,9 @@ bool JavaIgnoreGrammar::isAnnotation() {
 }
 bool JavaIgnoreGrammar::isImport() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Imports;
+}
+bool JavaIgnoreGrammar::isIIB() {
+	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::IIB;
 }
 
 Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0) {
@@ -226,13 +241,14 @@ bool Tokenizer::addTokenBuffer() {
 				skipComments(this->tokenItr->str(0));
 			else {
 				this->token_buffer.push_back(this->tokenItr->str(0));
-				int doIgnore = this->ignoreGrammar.checkGrammar(this->tokenItr->str(0));
+				int doIgnore = this->ignoreGrammar.checkGrammar(this->tokenItr->str(0), this->token_buffer.size());
 				if (doIgnore == -1) break;
 				else if (doIgnore == 1) {
 					this->token_buffer.clear();
 					if (this->ignoreGrammar.isStatic()) skipBlock();
 					else if (this->ignoreGrammar.isAssignment()) skipAssignment();
 					else if (this->ignoreGrammar.isAnnotation()) skipAnnotation();
+					else if (this->ignoreGrammar.isIIB()) skipBlock();
 					else if (this->ignoreGrammar.isImport()) this->tokenItr++;
 				}
 				else

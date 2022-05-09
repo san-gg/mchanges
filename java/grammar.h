@@ -50,6 +50,7 @@
 # include <stdexcept>
 # include <string>
 # include <vector>
+# include "node.h"
 
 #if defined __cplusplus
 # define YY_CPLUSPLUS __cplusplus
@@ -169,7 +170,7 @@
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
-#include "node.h"
+
 namespace yy {
 
 
@@ -683,7 +684,7 @@ namespace yy {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 27,     ///< Last index in yytable_.
+      yylast_ = 22,     ///< Last index in yytable_.
       yynnts_ = 6,  ///< Number of nonterminal symbols.
       yyfinal_ = 17, ///< Termination state number.
       yyntokens_ = 18  ///< Number of tokens.
