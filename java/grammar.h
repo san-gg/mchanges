@@ -189,6 +189,10 @@ namespace yy {
 	std::string *str;
 	JavaScope *scope;
 	JavaModifiers *modifiers;
+	FunctionList *funList;
+	JavaFunction *javaFunc;
+	Parameters *param;
+	uint64_t *bodyHash;
 
 
     };
@@ -219,17 +223,20 @@ namespace yy {
         C_BRACE = 259,
         T_CLASS = 260,
         ERROR = 261,
-        STATIC = 262,
-        ABSTRACT = 263,
-        STRICTFP = 264,
-        SYNCHRONIZED = 265,
-        NATIVE = 266,
-        PUBLIC = 267,
-        PRIVATE = 268,
-        PROTECTED = 269,
-        DEFAULT = 270,
-        COMMA = 271,
-        STRINGS = 272
+        O_PARAM = 262,
+        C_PARAM = 263,
+        STATIC = 264,
+        ABSTRACT = 265,
+        STRICTFP = 266,
+        SYNCHRONIZED = 267,
+        NATIVE = 268,
+        PUBLIC = 269,
+        PRIVATE = 270,
+        PROTECTED = 271,
+        DEFAULT = 272,
+        COMMA = 273,
+        STRINGS = 274,
+        BODY = 275
       };
     };
 
@@ -356,9 +363,12 @@ namespace yy {
     /// \returns  0 iff parsing succeeded.
     virtual int parse ();
 
-    /// Tokenizer.
-    /// \return TOKENS
+    /// Tokenizer. For yylex tokens.
+    /// \return TOKENS.
     virtual int yylex(semantic_type*) = 0;
+
+    /// Tokenizer. Set yylexbody to change specific regex.
+    virtual void yylexBody() = 0;
 
 #if YYDEBUG
     /// The current debugging stream.
@@ -684,10 +694,10 @@ namespace yy {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 22,     ///< Last index in yytable_.
-      yynnts_ = 6,  ///< Number of nonterminal symbols.
+      yylast_ = 78,     ///< Last index in yytable_.
+      yynnts_ = 10,  ///< Number of nonterminal symbols.
       yyfinal_ = 17, ///< Termination state number.
-      yyntokens_ = 18  ///< Number of tokens.
+      yyntokens_ = 21  ///< Number of tokens.
     };
 
 

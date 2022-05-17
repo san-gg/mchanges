@@ -1,4 +1,3 @@
-// change return to ERROR token
 #include "java/grammar.h"
 #include "java/tokenizer.h"
 #include "java/node.h"
@@ -18,12 +17,15 @@ public:
 	int yylex(yy::parser::semantic_type* value) {
 		return tokens.yylex(value);
 	}
+	void yylexBody() {
+		tokens.changeBodyRegex();
+	}
 };
 
 int main() {
 	WrrapperParser parser;
 	try {
-		parser.setFile("java/testJava/p1.java");
+		parser.setFile("java/testJava/p2.java");
 		parser.parse();
 	}
 	catch (std::ifstream::failure& e) {
@@ -48,11 +50,16 @@ int main() {
 		char temp;
 		std::cout << "Finally you did it press enter for success...";
 		std::cin >> temp;
-		std::cout << "Class Name : ";
-		if (jLang->getClassHeader()->getModifiers() != nullptr) {
-			std::cout << *(jLang->getClassHeader()->getModifiers()->getScope()) << " ";
+		std::cout << "==============================================\n";
+		if(jLang->getClassHeader()->getModifiers() != nullptr)
+			std::cout << (int)jLang->getClassHeader()->getModifiers()->getScope() << " ";
+		std::cout << "class " << jLang->getClassHeader()->getClassName() << std::endl;
+		std::cout << "------FunctionList--------\n";
+		const std::set<JavaFunction> &list = jLang->getFunctionList()->getFunctionList();
+		for (const JavaFunction& e : list) {
+			e.print();
+			std::cout << "-------------------------------------------------------------\n";
 		}
-		std::cout << jLang->getClassHeader()->getClassName() << std::endl;
 		delete jLang;
 	}
 	parser.closeFile();

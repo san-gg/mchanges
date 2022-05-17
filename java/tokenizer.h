@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include "grammar.h"
+#include "../smhasher/MurmurHash3.h"
 
 class InvalidException : public std::exception {
 public:
@@ -47,11 +48,11 @@ class JavaIgnoreGrammar {
 	void checkAssignment(const std::string&);
 	void checkAnnotation(const std::string&);
 	void checkImport(const std::string&);
-	void checkIIB(const std::string&, int);
+	void checkIIB(const std::string&, size_t);
 	void clearState();
 public:
 	JavaIgnoreGrammar();
-	int checkGrammar(const std::string&, int);
+	int checkGrammar(const std::string&, size_t);
 	bool isStatic();
 	bool isAssignment();
 	bool isAnnotation();
@@ -61,7 +62,6 @@ public:
 
 class Tokenizer {
 	std::string data;
-	std::string nextToken;
 	std::basic_regex<char> mainContent;
 	std::basic_regex<char> bodyContent;
 	std::basic_regex<char> skipContent;
@@ -72,22 +72,27 @@ class Tokenizer {
 	JavaIgnoreGrammar ignoreGrammar;
 	int token_index;
 	size_t lineno;
-	bool classToken = false;
+	bool doBodyRegex;
 
 	TOKENS get_yylex_token(yy::parser::semantic_type*, std::string&);
 	bool addTokenBuffer();
-	void skipComments(const std::string&);
+	void skipComments(const std::string&, bool);
 	void skipBlock();
 	void skipAssignment();
+	void appendTypeArray();
 	bool skipAnnotation();
 	bool getNewLineM();
+	bool getNewLineB();
+	bool checkBlockPresent();
+	std::string concateTypes();
+	uint64_t* get_yylex_body();
 public:
 	bool isComment = false;
-	bool changeRegex = false;
 	bool skipExpression = false;
 	Tokenizer();
 	void setFileName(const char*);
 	TOKENS yylex(yy::parser::semantic_type*);
 	void closeFile();
+	void changeBodyRegex();
 };
 #endif // !__TOKENIZER_

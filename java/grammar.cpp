@@ -38,7 +38,7 @@
 // First part of user prologue.
 
 #include "grammar.h"
-JavaLang* jLang = nullptr;
+JavaLang *jLang = nullptr;
 
 
 
@@ -545,7 +545,7 @@ namespace yy {
           switch (yyn)
             {
   case 2:
-                                        { jLang = new JavaLang((yystack_[2].value.classHeader)); YYACCEPT; }
+                                                        { jLang = new JavaLang((yystack_[3].value.classHeader), (yystack_[1].value.funList)); YYACCEPT; }
     break;
 
   case 3:
@@ -569,63 +569,141 @@ namespace yy {
     break;
 
   case 8:
-                                                { (yystack_[1].value.modifiers)->setStatic(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+                                        { (yylhs.value.funList) = (yystack_[1].value.funList); (yylhs.value.funList)->addFunction((yystack_[0].value.javaFunc)); delete (yystack_[0].value.javaFunc); }
     break;
 
   case 9:
-                                                        { (yystack_[1].value.modifiers)->setAbstract(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+                                                                        { (yylhs.value.funList) = new FunctionList(); (yylhs.value.funList)->addFunction((yystack_[0].value.javaFunc)); delete (yystack_[0].value.javaFunc); }
     break;
 
   case 10:
-                                                        { (yystack_[1].value.modifiers)->setStrictfp(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+                                                { (yylhs.value.javaFunc) = (yystack_[2].value.javaFunc); (yystack_[2].value.javaFunc)->setParameters((yystack_[1].value.param)); delete (yystack_[1].value.param); 
+											  (yystack_[2].value.javaFunc)->setBodyHash((yystack_[0].value.bodyHash)); delete (yystack_[0].value.bodyHash);
+											}
     break;
 
   case 11:
-                                                        { (yystack_[1].value.modifiers)->setSynchronized(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers);}
+                                                        { (yylhs.value.javaFunc) = new JavaFunction((yystack_[1].value.str), (yystack_[0].value.str)); (yylhs.value.javaFunc)->setJavaModifier((yystack_[2].value.modifiers));
+												  delete (yystack_[2].value.modifiers); delete (yystack_[1].value.str); delete (yystack_[0].value.str);
+												}
     break;
 
   case 12:
-                                                                { (yystack_[1].value.modifiers)->setNative(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+                                                                                { (yylhs.value.javaFunc) = new JavaFunction((yystack_[1].value.str), (yystack_[0].value.str)); 
+												  delete (yystack_[1].value.str); delete (yystack_[0].value.str);
+												}
     break;
 
   case 13:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); }
+                                                                                {	(yylhs.value.param) = new Parameters();	yylexBody(); }
     break;
 
   case 14:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStatic(); }
+                                                                                {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
+														}
     break;
 
   case 15:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setAbstract(); }
+                                                                        {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
+														}
     break;
 
   case 16:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStrictfp(); }
+                                                                                {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
     break;
 
   case 17:
-                                                                { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setSynchronized(); }
+                                                                        {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
     break;
 
   case 18:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setNative(); }
+                                                                                {	(yylhs.value.param) = (yystack_[3].value.param); (yystack_[3].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
     break;
 
   case 19:
-                                { (yylhs.value.scope) = new JavaScope("public"); }
+                                                                        {	(yylhs.value.param) = (yystack_[4].value.param); (yystack_[4].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
     break;
 
   case 20:
-                                        { (yylhs.value.scope) = new JavaScope("private"); }
+                                                                        {	(yylhs.value.param) = (yystack_[3].value.param); (yystack_[3].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
+														}
     break;
 
   case 21:
-                                        { (yylhs.value.scope) = new JavaScope("protected"); }
+                                                                {	(yylhs.value.param) = (yystack_[4].value.param); (yystack_[4].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
+														}
     break;
 
   case 22:
-                                        { (yylhs.value.scope) = new JavaScope("default"); }
+                                                { (yystack_[1].value.modifiers)->setStatic(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+    break;
+
+  case 23:
+                                                        { (yystack_[1].value.modifiers)->setAbstract(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+    break;
+
+  case 24:
+                                                        { (yystack_[1].value.modifiers)->setStrictfp(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+    break;
+
+  case 25:
+                                                        { (yystack_[1].value.modifiers)->setSynchronized(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers);}
+    break;
+
+  case 26:
+                                                                { (yystack_[1].value.modifiers)->setNative(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
+    break;
+
+  case 27:
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); }
+    break;
+
+  case 28:
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStatic(); }
+    break;
+
+  case 29:
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setAbstract(); }
+    break;
+
+  case 30:
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStrictfp(); }
+    break;
+
+  case 31:
+                                                                { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setSynchronized(); }
+    break;
+
+  case 32:
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setNative(); }
+    break;
+
+  case 33:
+                                { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PUBLIC); }
+    break;
+
+  case 34:
+                                        { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PRIVATE); }
+    break;
+
+  case 35:
+                                        { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PROTECTED); }
+    break;
+
+  case 36:
+                                        { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::DEFAULT); }
     break;
 
 
@@ -805,76 +883,97 @@ namespace yy {
   }
 
 
-  const signed char parser::yypact_ninf_ = -16;
+  const signed char parser::yypact_ninf_ = -18;
 
   const signed char parser::yytable_ninf_ = -1;
 
   const signed char
   parser::yypact_[] =
   {
-      -4,   -15,   -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16,
-     -16,    12,    -3,   -16,    10,   -16,   -16,   -16,    18,   -16,
-     -16,   -16,   -16,   -16,   -16,   -16,   -16,   -16
+      21,   -17,   -18,   -18,   -18,   -18,   -18,   -18,   -18,   -18,
+     -18,     6,    -3,   -18,    65,   -18,   -18,   -18,    43,   -18,
+     -18,   -18,   -18,   -18,   -18,   -18,   -18,   -12,     8,   -18,
+       1,    54,   -18,   -18,   -18,    32,   -15,   -10,   -18,    -9,
+       9,   -18,   -18,    -5,    31,   -18,   -18,    -7,   -18,   -18,
+      53,   -18,   -18,   -18,   -18
   };
 
   const signed char
   parser::yydefact_[] =
   {
-       0,     0,    14,    15,    16,    17,    18,    19,    20,    21,
-      22,     0,     0,     4,     0,    13,     7,     1,     0,     6,
-       5,     8,     9,    10,    11,    12,     3,     2
+       0,     0,    28,    29,    30,    31,    32,    33,    34,    35,
+      36,     0,     0,     4,     0,    27,     7,     1,     0,     6,
+       5,    22,    23,    24,    25,    26,     3,     0,     0,     9,
+       0,     0,    12,     2,     8,     0,     0,     0,    13,     0,
+       0,    10,    11,     0,     0,    14,    16,     0,    20,    18,
+       0,    15,    17,    21,    19
   };
 
   const signed char
   parser::yypgoto_[] =
   {
-     -16,   -16,   -16,     2,   -16,   -16
+     -18,   -18,   -18,    15,   -18,    13,   -18,   -18,    42,   -18
   };
 
   const signed char
   parser::yydefgoto_[] =
   {
-      -1,    11,    12,    13,    14,    15
+      -1,    11,    12,    13,    28,    29,    30,    36,    31,    15
   };
 
   const signed char
   parser::yytable_[] =
   {
-      18,     1,    16,     2,     3,     4,     5,     6,     7,     8,
-       9,    10,    17,    19,    20,     1,    26,    21,    22,    23,
-      24,    25,    27
+      18,    51,    16,    45,    40,    41,    17,    32,    35,    42,
+      43,    52,    33,    46,    47,    19,    20,     2,     3,     4,
+       5,     6,     7,     8,     9,    10,     1,    27,    44,    26,
+       2,     3,     4,     5,     6,     7,     8,     9,    10,    48,
+      38,    34,    14,     0,     0,     0,     0,     0,     0,    49,
+      50,    39,     2,     3,     4,     5,     6,     7,     8,     9,
+      10,    53,    27,    21,    22,    23,    24,    25,     0,     0,
+       1,    54,     0,    37,    21,    22,    23,    24,    25
   };
 
   const signed char
   parser::yycheck_[] =
   {
-       3,     5,    17,     7,     8,     9,    10,    11,    12,    13,
-      14,    15,     0,    16,    17,     5,    14,     7,     8,     9,
-      10,    11,     4
+       3,     8,    19,     8,    19,    20,     0,    19,     7,    19,
+      19,    18,     4,    18,    19,    18,    19,     9,    10,    11,
+      12,    13,    14,    15,    16,    17,     5,    19,    19,    14,
+       9,    10,    11,    12,    13,    14,    15,    16,    17,     8,
+       8,    28,     0,    -1,    -1,    -1,    -1,    -1,    -1,    18,
+      19,    19,     9,    10,    11,    12,    13,    14,    15,    16,
+      17,     8,    19,     9,    10,    11,    12,    13,    -1,    -1,
+       5,    18,    -1,    19,     9,    10,    11,    12,    13
   };
 
   const signed char
   parser::yystos_[] =
   {
-       0,     5,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    19,    20,    21,    22,    23,    17,     0,     3,    16,
-      17,     7,     8,     9,    10,    11,    21,     4
+       0,     5,     9,    10,    11,    12,    13,    14,    15,    16,
+      17,    22,    23,    24,    29,    30,    19,     0,     3,    18,
+      19,     9,    10,    11,    12,    13,    24,    19,    25,    26,
+      27,    29,    19,     4,    26,     7,    28,    19,     8,    19,
+      19,    20,    19,    19,    19,     8,    18,    19,     8,    18,
+      19,     8,    18,     8,    18
   };
 
   const signed char
   parser::yyr1_[] =
   {
-       0,    18,    19,    20,    20,    20,    20,    21,    22,    22,
-      22,    22,    22,    22,    22,    22,    22,    22,    22,    23,
-      23,    23,    23
+       0,    21,    22,    23,    23,    23,    23,    24,    25,    25,
+      26,    27,    27,    28,    28,    28,    28,    28,    28,    28,
+      28,    28,    29,    29,    29,    29,    29,    29,    29,    29,
+      29,    29,    29,    30,    30,    30,    30
   };
 
   const signed char
   parser::yyr2_[] =
   {
-       0,     2,     3,     2,     1,     2,     2,     2,     2,     2,
-       2,     2,     2,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1
+       0,     2,     4,     2,     1,     2,     2,     2,     2,     1,
+       3,     3,     2,     2,     4,     5,     4,     5,     4,     5,
+       4,     5,     2,     2,     2,     2,     2,     1,     1,     1,
+       1,     1,     1,     1,     1,     1,     1
   };
 
 
@@ -885,18 +984,21 @@ namespace yy {
   const parser::yytname_[] =
   {
   "$end", "error", "$undefined", "O_BRACE", "C_BRACE", "T_CLASS", "ERROR",
-  "STATIC", "ABSTRACT", "STRICTFP", "SYNCHRONIZED", "NATIVE", "PUBLIC",
-  "PRIVATE", "PROTECTED", "DEFAULT", "COMMA", "STRINGS", "$accept", "JAVA",
-  "CLASS_HEADER", "CLASS_NAME", "MODIFIERS", "SCOPE", YY_NULLPTR
+  "O_PARAM", "C_PARAM", "STATIC", "ABSTRACT", "STRICTFP", "SYNCHRONIZED",
+  "NATIVE", "PUBLIC", "PRIVATE", "PROTECTED", "DEFAULT", "COMMA",
+  "STRINGS", "BODY", "$accept", "JAVA", "CLASS_HEADER", "CLASS_NAME",
+  "FUNCTION_LIST", "FUNCTION", "FUNCTION_HEADER", "PARAMETERS",
+  "MODIFIERS", "SCOPE", YY_NULLPTR
   };
 
 #if YYDEBUG
   const signed char
   parser::yyrline_[] =
   {
-       0,    28,    28,    32,    33,    34,    35,    39,    43,    44,
-      45,    46,    47,    48,    49,    50,    51,    52,    53,    56,
-      57,    58,    59
+       0,    36,    36,    40,    41,    42,    43,    47,    50,    51,
+      54,    59,    62,    67,    68,    71,    75,    78,    81,    84,
+      87,    90,    96,    97,    98,    99,   100,   101,   102,   103,
+     104,   105,   106,   109,   110,   111,   112
   };
 
   // Print the state stack on the debug stream.
@@ -964,9 +1066,9 @@ namespace yy {
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17
+      15,    16,    17,    18,    19,    20
     };
-    const int user_token_number_max_ = 272;
+    const int user_token_number_max_ = 275;
 
     if (t <= 0)
       return yyeof_;

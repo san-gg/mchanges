@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <stack>
 #include "tokenizer.h"
 #include "node.h"
 #include "grammar.h"
@@ -51,13 +50,13 @@ void JavaIgnoreGrammar::checkImport(const std::string& token) {
 	else if (this->importShift == 1 && cmp2 == 0)
 		this->importShift = 2;
 }
-void JavaIgnoreGrammar::checkIIB(const std::string& token, int tokenBlockSize) {
+void JavaIgnoreGrammar::checkIIB(const std::string& token, size_t tokenBlockSize) {
 	int cmp = token.compare("{");
 	if (this->iibShift == 0 && tokenBlockSize == 1 && cmp == 0)
 		this->iibShift = 1;
 }
 
-int JavaIgnoreGrammar::checkGrammar(const std::string &token, int tokenBlockSize) {
+int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockSize) {
 	// Accept and shift tokens
 	checkStatic(token);
 	checkAssignment(token);
@@ -122,34 +121,48 @@ bool JavaIgnoreGrammar::isIIB() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::IIB;
 }
 
-Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0) {
-	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|(\".*\")|('.*')|([{}(),<>=;@]|[\\w]+)");
-	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|(\".*\")|('.*')|([{}]|[\\S]*)");
+Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0), doBodyRegex(false) {
+	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|(\".*\")|('.*')|([{}(),<>=;@\\[\\]?]|[\\w]+)");
+	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"']+");
 	this->file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 }
 
 void Tokenizer::setFileName(const char* fileName) {
 	this->isComment = false;
-	this->changeRegex = false;
+	this->doBodyRegex = false;
 	this->skipExpression = false;
-	this->classToken = false;
 	this->data.clear();
-	this->nextToken.clear();
 	this->token_buffer.clear();
 	this->tokenItr = this->endTokenItr;
 	file.open(fileName);
 }
 
 bool Tokenizer::getNewLineM() {
-	if (std::getline(this->file, this->data)) {
-		this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
-		this->lineno += 1;
-		return true;
+	try {
+		if (std::getline(this->file, this->data)) {
+			this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
+			this->lineno += 1;
+		}
 	}
-	return false;
+	catch (...) {
+		return false;
+	}
+	return true;
+}
+bool Tokenizer::getNewLineB() {
+	try {
+		if (std::getline(this->file, this->data)) {
+			this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
+			this->lineno += 1;
+		}
+	}
+	catch (...) {
+		return false;
+	}
+	return true;
 }
 
-void Tokenizer::skipComments(const std::string& token) {
+void Tokenizer::skipComments(const std::string& token, bool useBodyRegex = false) {
 	if (token.compare("//") == 0) {
 		this->tokenItr = this->endTokenItr;
 	}
@@ -159,7 +172,7 @@ void Tokenizer::skipComments(const std::string& token) {
 				if (this->tokenItr->str(1).compare("*/") == 0) break;
 				this->tokenItr++;
 			}
-			else if (!getNewLineM())
+			else if ((!useBodyRegex && !getNewLineM()) || (!getNewLineB()))
 					throw yy::parser::syntax_error("Reached end of file while parsing multi comment");
 		}
 		this->tokenItr++;
@@ -171,19 +184,16 @@ void Tokenizer::skipComments(const std::string& token) {
 
 
 void Tokenizer::skipBlock() {
-	std::stack<char> st;
-	st.push('{');
+	int stack = 1;
 	this->tokenItr++;
-	while (!st.empty()) {
+	while (stack > 0) {
 		if (this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0) {
 				skipComments(this->tokenItr->str(0));
 				continue;
 			}
-			else if (this->tokenItr->str(4).compare("{") == 0)
-				st.push('{');
-			else if (this->tokenItr->str(4).compare("}") == 0)
-				st.pop();
+			else if (this->tokenItr->str(4).compare("{") == 0) stack += 1;
+			else if (this->tokenItr->str(4).compare("}") == 0) stack -= 1;
 			this->tokenItr++;
 		}
 		else if (!getNewLineM())
@@ -206,7 +216,7 @@ void Tokenizer::skipAssignment() {
 }
 
 bool Tokenizer::skipAnnotation() {
-	std::stack<char> st;
+	int stack = 0;
 	bool annotationWithParam = false;
 	this->tokenItr++;
 	while(true) {
@@ -217,11 +227,11 @@ bool Tokenizer::skipAnnotation() {
 			}
 			else if (this->tokenItr->str(4).compare("(") == 0) {
 				annotationWithParam = true;
-				st.push('(');
+				stack += 1;
 			}
 			else if (this->tokenItr->str(4).compare(")") == 0)
-				st.pop();
-			if (st.empty()) break;
+				stack -= 1;
+			if (stack == 0) break;
 			this->tokenItr++;
 		}
 		else if (!getNewLineM())
@@ -229,6 +239,55 @@ bool Tokenizer::skipAnnotation() {
 	}
 	if (annotationWithParam) this->tokenItr++;
 	return annotationWithParam;
+}
+
+std::string Tokenizer::concateTypes() {
+	int stack = 1;
+	std::string typeStr;
+	typeStr.append("<");
+	this->tokenItr++;
+	while (stack > 0) {
+		if (this->tokenItr != this->endTokenItr) {
+			int cmp1 = this->tokenItr->str(1).compare("");
+			int cmp2 = this->tokenItr->str(2).compare("");
+			int cmp3 = this->tokenItr->str(3).compare("");
+
+			if (cmp1 != 0 || cmp2 != 0 || cmp3 != 0) throw yy::parser::syntax_error("");
+			else if (this->tokenItr->str(4).compare("<") == 0) stack += 1;
+			else if (this->tokenItr->str(4).compare(">") == 0) stack -= 1;
+
+			typeStr.append(this->tokenItr->str(4));
+			this->tokenItr++;
+		}
+		else if (!getNewLineM()) {
+			throw yy::parser::syntax_error("Invaild token");
+		}
+	}
+	return typeStr;
+}
+
+void Tokenizer::appendTypeArray() {
+	const std::string& token = this->tokenItr->str(4);
+	int tf = this->token_buffer.size() - 1;
+
+	if (tf == 0) {
+		this->token_buffer[0].append(token);
+	}
+	else if (token.compare("]") == 0) {
+		int len = this->token_buffer[tf].length() - 1;
+		if (this->token_buffer[tf].at(len) == '[')
+			this->token_buffer[tf].append("]");
+		else
+			this->token_buffer[tf - 1].append("]");
+	}
+	else {
+		std::string& value = this->token_buffer[tf - 1];
+		if (value.compare("(") == 0 || value.compare(",") == 0)
+			this->token_buffer[tf].append("[");
+		else
+			value.append("[");
+	} 
+	this->tokenItr++;
 }
 
 bool Tokenizer::addTokenBuffer() {
@@ -239,6 +298,15 @@ bool Tokenizer::addTokenBuffer() {
 		if (this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0)
 				skipComments(this->tokenItr->str(0));
+			else if (this->tokenItr->str(4).compare("<") == 0) {
+				std::string type = concateTypes();
+				this->token_buffer[this->token_buffer.size() - 1].append(type);
+				type.clear();
+			}
+			else if (this->tokenItr->str(4).compare("[") == 0 ||
+					this->tokenItr->str(4).compare("]") == 0) {
+				appendTypeArray();
+			}
 			else {
 				this->token_buffer.push_back(this->tokenItr->str(0));
 				int doIgnore = this->ignoreGrammar.checkGrammar(this->tokenItr->str(0), this->token_buffer.size());
@@ -251,8 +319,7 @@ bool Tokenizer::addTokenBuffer() {
 					else if (this->ignoreGrammar.isIIB()) skipBlock();
 					else if (this->ignoreGrammar.isImport()) this->tokenItr++;
 				}
-				else
-					this->tokenItr++;
+				else this->tokenItr++;
 			}
 		}
 		else if (!getNewLineM()) throw yy::parser::syntax_error("End of file reached");
@@ -276,6 +343,8 @@ TOKENS Tokenizer::get_yylex_token(yy::parser::semantic_type* val, std::string& t
 	else if (token.compare("strictfp") == 0) tokenNo = yy::parser::token::yytokentype::STRICTFP;
 	else if (token.compare("synchronized") == 0) tokenNo = yy::parser::token::yytokentype::SYNCHRONIZED;
 	else if (token.compare("class") == 0) tokenNo = yy::parser::token::yytokentype::T_CLASS;
+	else if (token.compare("(") == 0) tokenNo = yy::parser::token::yytokentype::O_PARAM;
+	else if (token.compare(")") == 0) tokenNo = yy::parser::token::yytokentype::C_PARAM;
 	else {
 		tokenNo = yy::parser::token::yytokentype::STRINGS;
 		val->str = new std::string(token);
@@ -283,15 +352,88 @@ TOKENS Tokenizer::get_yylex_token(yy::parser::semantic_type* val, std::string& t
 	return tokenNo;
 }
 
+uint64_t* Tokenizer::get_yylex_body() {
+	uint64_t* hash = new uint64_t[2];
+	std::string body;
+	int braceCount = 1;
+	body.reserve(3072);
+	hash[0] = 0;
+	hash[1] = 0;
+	this->doBodyRegex = false;
+	// check abstract | opening block(brace)
+	if (!checkBlockPresent()) {
+		return hash;
+	}
+
+	if (this->tokenItr != this->endTokenItr) {
+		this->data.erase(0, this->tokenItr->position());
+		this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
+	}
+	else if (!getNewLineB()) throw yy::parser::syntax_error("End of file reached");
+
+	while (true) {
+		if (this->tokenItr != this->endTokenItr) {
+			if (this->tokenItr->str(1).compare("") != 0)
+				skipComments(this->tokenItr->str(1), true);
+			else {
+				body.append(this->tokenItr->str(0));
+				if (this->tokenItr->str(0).compare("{") == 0) braceCount += 1;
+				else if (this->tokenItr->str(0).compare("}") == 0) braceCount -= 1;
+				this->tokenItr++;
+			}
+		}
+		else if(!getNewLineB()) throw yy::parser::syntax_error("End of file reached");
+		if (braceCount == 0) break;
+	}
+	MurmurHash3_x64_128(body.c_str(), body.length(), 1, hash);
+	// convert to mainContentRegex
+	if (this->tokenItr != this->endTokenItr) {
+		this->data.erase(0, this->tokenItr->position());
+		this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
+	}
+	else this->data.clear();
+	return hash;
+}
+
+bool Tokenizer::checkBlockPresent() {
+	bool returnVal = false;
+	while (true) {
+		if (this->tokenItr != this->endTokenItr) {
+			if (this->tokenItr->str(1).compare("") != 0) {
+				skipComments(this->tokenItr->str(0));
+				continue;
+			}
+			else if (this->tokenItr->str(0).compare("{") == 0) {
+				returnVal = true;
+				break;
+			}
+			else if (this->tokenItr->str(0).compare(";") == 0)
+				break;
+			this->tokenItr++;
+		}
+		else if (!getNewLineM())
+			throw yy::parser::syntax_error("End of file reached");
+	}
+	this->tokenItr++;
+	return returnVal;
+}
 
 TOKENS Tokenizer::yylex(yy::parser::semantic_type* val) {
+	if (this->doBodyRegex) {
+		this->token_index = this->token_buffer.size();
+		val->bodyHash = get_yylex_body();
+		return yy::parser::token::yytokentype::BODY;
+	}
 	if (this->token_index == this->token_buffer.size()) {
 		this->token_index = 0;
 		this->token_buffer.clear();
 		if (!addTokenBuffer()) return yy::parser::token::yytokentype::ERROR;
 	}
-	TOKENS token = get_yylex_token(val, this->token_buffer[this->token_index++]);
-	return token;
+	return get_yylex_token(val, this->token_buffer[this->token_index++]);
+}
+
+void Tokenizer::changeBodyRegex() {
+	this->doBodyRegex = true;
 }
 
 void Tokenizer::closeFile() {
