@@ -22,7 +22,8 @@ class JavaIgnoreGrammar {
 		Assignment  : STRINGS '='
 		StaticBlock : 'static' '{'
 		Annotation  : '@' STRINGS
-		import		: import STRINGS ';'
+		imp_pack	: import STRINGS ';'
+					| package STRINGS ';'
 		IIB			: '{'
 		STRINGS		: Text
 					| <

@@ -43,9 +43,10 @@ void JavaIgnoreGrammar::checkAnnotation(const std::string& token) {
 void JavaIgnoreGrammar::checkImport(const std::string& token) {
 	int cmp1 = token.compare("import");
 	int cmp2 = token.compare(";");
-	if (this->importShift == 1 && cmp1 == 0)
+	int cmp3 = token.compare("package");
+	if (this->importShift == 1 && (cmp1 == 0 || cmp3 == 0))
 		throw yy::parser::syntax_error("Invalid import statement");
-	else if (this->importShift == 0 && cmp1 == 0)
+	else if (this->importShift == 0 && (cmp1 == 0 || cmp3 == 0))
 		this->importShift = 1;
 	else if (this->importShift == 1 && cmp2 == 0)
 		this->importShift = 2;
@@ -172,7 +173,7 @@ void Tokenizer::skipComments(const std::string& token, bool useBodyRegex = false
 				if (this->tokenItr->str(1).compare("*/") == 0) break;
 				this->tokenItr++;
 			}
-			else if ((!useBodyRegex && !getNewLineM()) || (!getNewLineB()))
+			else if ((!useBodyRegex && !getNewLineM()) || (useBodyRegex && !getNewLineB()))
 					throw yy::parser::syntax_error("Reached end of file while parsing multi comment");
 		}
 		this->tokenItr++;
