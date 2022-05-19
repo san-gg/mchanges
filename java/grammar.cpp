@@ -589,120 +589,130 @@ namespace yy {
     break;
 
   case 12:
+                                                                                { (yylhs.value.javaFunc) = new JavaFunction((yystack_[0].value.str)); (yylhs.value.javaFunc)->setJavaModifier((yystack_[1].value.modifiers)); 
+												  delete (yystack_[1].value.modifiers); delete (yystack_[0].value.str);
+												}
+    break;
+
+  case 13:
                                                                                 { (yylhs.value.javaFunc) = new JavaFunction((yystack_[1].value.str), (yystack_[0].value.str)); 
 												  delete (yystack_[1].value.str); delete (yystack_[0].value.str);
 												}
     break;
 
-  case 13:
-                                                                                {	(yylhs.value.param) = new Parameters();	yylexBody(); }
-    break;
-
   case 14:
-                                                                                {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
-															delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
-														}
+                                                                                        { (yylhs.value.javaFunc) = new JavaFunction((yystack_[0].value.str)); delete (yystack_[0].value.str); }
     break;
 
   case 15:
-                                                                        {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
-															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
-														}
+                                                                                {	(yylhs.value.param) = new Parameters(); yylexBody();	}
     break;
 
   case 16:
                                                                                 {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
-															delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
 														}
     break;
 
   case 17:
                                                                         {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
-															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
 														}
     break;
 
   case 18:
-                                                                                {	(yylhs.value.param) = (yystack_[3].value.param); (yystack_[3].value.param)->addParameter((yystack_[2].value.str));
+                                                                                {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
 															delete (yystack_[2].value.str); delete (yystack_[1].value.str);
 														}
     break;
 
   case 19:
-                                                                        {	(yylhs.value.param) = (yystack_[4].value.param); (yystack_[4].value.param)->addParameter((yystack_[2].value.str));
+                                                                        {	(yylhs.value.param) = new Parameters(); (yylhs.value.param)->addParameter((yystack_[2].value.str));
 															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str);
 														}
     break;
 
   case 20:
+                                                                                {	(yylhs.value.param) = (yystack_[3].value.param); (yystack_[3].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
+    break;
+
+  case 21:
+                                                                        {	(yylhs.value.param) = (yystack_[4].value.param); (yystack_[4].value.param)->addParameter((yystack_[2].value.str));
+															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str);
+														}
+    break;
+
+  case 22:
                                                                         {	(yylhs.value.param) = (yystack_[3].value.param); (yystack_[3].value.param)->addParameter((yystack_[2].value.str));
 															delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
 														}
     break;
 
-  case 21:
+  case 23:
                                                                 {	(yylhs.value.param) = (yystack_[4].value.param); (yystack_[4].value.param)->addParameter((yystack_[2].value.str));
 															delete (yystack_[3].value.str); delete (yystack_[2].value.str); delete (yystack_[1].value.str); yylexBody();
 														}
     break;
 
-  case 22:
+  case 24:
                                                 { (yystack_[1].value.modifiers)->setStatic(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 23:
+  case 25:
                                                         { (yystack_[1].value.modifiers)->setAbstract(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 24:
+  case 26:
                                                         { (yystack_[1].value.modifiers)->setStrictfp(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 25:
+  case 27:
                                                         { (yystack_[1].value.modifiers)->setSynchronized(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers);}
     break;
 
-  case 26:
+  case 28:
                                                                 { (yystack_[1].value.modifiers)->setNative(); (yylhs.value.modifiers) = (yystack_[1].value.modifiers); }
     break;
 
-  case 27:
+  case 29:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); }
     break;
 
-  case 28:
+  case 30:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStatic(); }
     break;
 
-  case 29:
+  case 31:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setAbstract(); }
     break;
 
-  case 30:
+  case 32:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setStrictfp(); }
     break;
 
-  case 31:
+  case 33:
                                                                 { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setSynchronized(); }
     break;
 
-  case 32:
+  case 34:
                                                                         { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setNative(); }
     break;
 
-  case 33:
+  case 35:
                                 { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PUBLIC); }
     break;
 
-  case 34:
+  case 36:
                                         { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PRIVATE); }
     break;
 
-  case 35:
+  case 37:
                                         { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::PROTECTED); }
     break;
 
-  case 36:
+  case 38:
                                         { (yylhs.value.scope) = new JavaScope(JavaScope::Scope::DEFAULT); }
     break;
 
@@ -901,12 +911,12 @@ namespace yy {
   const signed char
   parser::yydefact_[] =
   {
-       0,     0,    28,    29,    30,    31,    32,    33,    34,    35,
-      36,     0,     0,     4,     0,    27,     7,     1,     0,     6,
-       5,    22,    23,    24,    25,    26,     3,     0,     0,     9,
-       0,     0,    12,     2,     8,     0,     0,     0,    13,     0,
-       0,    10,    11,     0,     0,    14,    16,     0,    20,    18,
-       0,    15,    17,    21,    19
+       0,     0,    30,    31,    32,    33,    34,    35,    36,    37,
+      38,     0,     0,     4,     0,    29,     7,     1,     0,     6,
+       5,    24,    25,    26,    27,    28,     3,    14,     0,     9,
+       0,     0,    13,     2,     8,     0,     0,    12,    15,     0,
+       0,    10,    11,     0,     0,    16,    18,     0,    22,    20,
+       0,    17,    19,    23,    21
   };
 
   const signed char
@@ -962,18 +972,18 @@ namespace yy {
   parser::yyr1_[] =
   {
        0,    21,    22,    23,    23,    23,    23,    24,    25,    25,
-      26,    27,    27,    28,    28,    28,    28,    28,    28,    28,
-      28,    28,    29,    29,    29,    29,    29,    29,    29,    29,
-      29,    29,    29,    30,    30,    30,    30
+      26,    27,    27,    27,    27,    28,    28,    28,    28,    28,
+      28,    28,    28,    28,    29,    29,    29,    29,    29,    29,
+      29,    29,    29,    29,    29,    30,    30,    30,    30
   };
 
   const signed char
   parser::yyr2_[] =
   {
        0,     2,     4,     2,     1,     2,     2,     2,     2,     1,
-       3,     3,     2,     2,     4,     5,     4,     5,     4,     5,
-       4,     5,     2,     2,     2,     2,     2,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     1
+       3,     3,     2,     2,     1,     2,     4,     5,     4,     5,
+       4,     5,     4,     5,     2,     2,     2,     2,     2,     1,
+       1,     1,     1,     1,     1,     1,     1,     1,     1
   };
 
 
@@ -996,9 +1006,9 @@ namespace yy {
   parser::yyrline_[] =
   {
        0,    36,    36,    40,    41,    42,    43,    47,    50,    51,
-      54,    59,    62,    67,    68,    71,    75,    78,    81,    84,
-      87,    90,    96,    97,    98,    99,   100,   101,   102,   103,
-     104,   105,   106,   109,   110,   111,   112
+      54,    59,    62,    65,    68,    71,    72,    75,    79,    82,
+      85,    88,    91,    94,   100,   101,   102,   103,   104,   105,
+     106,   107,   108,   109,   110,   113,   114,   115,   116
   };
 
   // Print the state stack on the debug stream.

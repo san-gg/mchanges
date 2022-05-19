@@ -122,8 +122,9 @@ bool JavaIgnoreGrammar::isIIB() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::IIB;
 }
 
-Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0), doBodyRegex(false) {
-	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|(\".*\")|('.*')|([{}(),<>=;@\\[\\]?]|[\\w]+)");
+Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0),
+						doBodyRegex(false), innerClass(false) {
+	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|(\"(?:\\\\.|[^\\\\\"])*\")|('(?:\\\\.|[^\\\\'])*')|([{}(),<>=;@\\[\\]?]|[\\w]+)");
 	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"']+");
 	this->file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 }
@@ -291,6 +292,20 @@ void Tokenizer::appendTypeArray() {
 	this->tokenItr++;
 }
 
+void Tokenizer::skipToToken(const char* token) {
+	while (true) {
+		if(this->tokenItr != this->endTokenItr) {
+			if (this->tokenItr->str(1).compare("") != 0)
+				skipComments(this->tokenItr->str(1));
+			else if (this->tokenItr->str(4).compare(token) == 0)
+				break;
+			else this->tokenItr++;
+		}
+		else if (!getNewLineM())
+			throw yy::parser::syntax_error("Reached end of file while parsing inner class");
+	}
+}
+
 bool Tokenizer::addTokenBuffer() {
 	if (this->data.length() == 0 && !getNewLineM())
 		return false;
@@ -307,6 +322,11 @@ bool Tokenizer::addTokenBuffer() {
 			else if (this->tokenItr->str(4).compare("[") == 0 ||
 					this->tokenItr->str(4).compare("]") == 0) {
 				appendTypeArray();
+			}
+			else if (this->tokenItr->str(4).compare("class") == 0 && this->innerClass) {
+				this->token_buffer.clear();
+				skipToToken("{");
+				skipBlock();
 			}
 			else {
 				this->token_buffer.push_back(this->tokenItr->str(0));
@@ -343,9 +363,12 @@ TOKENS Tokenizer::get_yylex_token(yy::parser::semantic_type* val, std::string& t
 	else if (token.compare("static") == 0) tokenNo = yy::parser::token::yytokentype::STATIC;
 	else if (token.compare("strictfp") == 0) tokenNo = yy::parser::token::yytokentype::STRICTFP;
 	else if (token.compare("synchronized") == 0) tokenNo = yy::parser::token::yytokentype::SYNCHRONIZED;
-	else if (token.compare("class") == 0) tokenNo = yy::parser::token::yytokentype::T_CLASS;
 	else if (token.compare("(") == 0) tokenNo = yy::parser::token::yytokentype::O_PARAM;
 	else if (token.compare(")") == 0) tokenNo = yy::parser::token::yytokentype::C_PARAM;
+	else if (token.compare("class") == 0) {
+		tokenNo = yy::parser::token::yytokentype::T_CLASS;
+		this->innerClass = true;
+	}
 	else {
 		tokenNo = yy::parser::token::yytokentype::STRINGS;
 		val->str = new std::string(token);

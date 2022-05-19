@@ -59,9 +59,13 @@ FUNCTION : FUNCTION_HEADER PARAMETERS BODY	{ $$ = $1; $1->setParameters($2); del
 FUNCTION_HEADER : MODIFIERS STRINGS STRINGS		{ $$ = new JavaFunction($2, $3); $$->setJavaModifier($1);
 												  delete $1; delete $2; delete $3;
 												}
+				| MODIFIERS STRINGS				{ $$ = new JavaFunction($2); $$->setJavaModifier($1); 
+												  delete $1; delete $2;
+												}
 				| STRINGS STRINGS				{ $$ = new JavaFunction($1, $2); 
 												  delete $1; delete $2;
 												}
+				| STRINGS						{ $$ = new JavaFunction($1); delete $1; }
 				;
 
 PARAMETERS : O_PARAM C_PARAM							{	$$ = new Parameters(); yylexBody();	}

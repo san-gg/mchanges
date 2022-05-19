@@ -74,12 +74,14 @@ class Tokenizer {
 	int token_index;
 	size_t lineno;
 	bool doBodyRegex;
+	bool innerClass;
 
 	TOKENS get_yylex_token(yy::parser::semantic_type*, std::string&);
 	bool addTokenBuffer();
 	void skipComments(const std::string&, bool);
 	void skipBlock();
 	void skipAssignment();
+	void skipToToken(const char*);
 	void appendTypeArray();
 	bool skipAnnotation();
 	bool getNewLineM();

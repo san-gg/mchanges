@@ -73,6 +73,7 @@ class JavaFunction {
 	std::vector<std::string> paramList;
 public:
 	JavaFunction(std::string*, std::string*);
+	JavaFunction(std::string*);
 	void setJavaModifier(JavaModifiers*);
 	void setParameters(Parameters*);
 	void setBodyHash(uint64_t*);

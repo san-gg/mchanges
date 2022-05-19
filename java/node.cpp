@@ -46,6 +46,7 @@ FunctionList::~FunctionList() {
 //
 JavaFunction::JavaFunction(std::string* p1, std::string* p2) : returnType(*p1), name(*p2),
 															 bodyHash{0,0} { }
+JavaFunction::JavaFunction(std::string* p1) : name(*p1), bodyHash{0,0} { }
 bool JavaFunction::operator<(const JavaFunction& jFunc) const {
 	size_t count1 = this->paramList.size();
 	size_t count2 = jFunc.paramList.size();
