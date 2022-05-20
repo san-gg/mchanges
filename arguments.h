@@ -15,6 +15,8 @@ class ArgumentParser {
 public:
 	std::string get_directory1();
 	std::string get_directory2();
+	std::string get_clist();
+	std::string get_explist();
 	int parseAg(int, char **);
 };
 

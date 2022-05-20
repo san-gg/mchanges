@@ -44,7 +44,7 @@ CLASS_HEADER : MODIFIERS CLASS_NAME		{ $$ = $2; $$->setModifier($1); }
 			;
 
 
-CLASS_NAME : T_CLASS STRINGS	{ $$ = new JavaClassHeader($2); }
+CLASS_NAME : T_CLASS STRINGS	{ $$ = new JavaClassHeader($2); delete $2; }
 			;
 
 FUNCTION_LIST : FUNCTION_LIST FUNCTION	{ $$ = $1; $$->addFunction($2); delete $2; }
@@ -102,7 +102,7 @@ MODIFIERS : MODIFIERS STATIC			{ $1->setStatic(); $$ = $1; }
 			| MODIFIERS STRICTFP		{ $1->setStrictfp(); $$ = $1; }
 			| MODIFIERS SYNCHRONIZED	{ $1->setSynchronized(); $$ = $1;}
 			| MODIFIERS NATIVE			{ $1->setNative(); $$ = $1; }
-			| SCOPE						{ $$ = new JavaModifiers(); $$->setScope($1); }
+			| SCOPE						{ $$ = new JavaModifiers(); $$->setScope($1); delete $1; }
 			| STATIC					{ $$ = new JavaModifiers(); $$->setStatic(); }
 			| ABSTRACT					{ $$ = new JavaModifiers(); $$->setAbstract(); }
 			| STRICTFP					{ $$ = new JavaModifiers(); $$->setStrictfp(); }

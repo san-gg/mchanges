@@ -32,6 +32,7 @@ public:
 		~java_file_iterator() {
 			this->list.close();
 			this->data.clear();
+			this->parentDir.clear();
 		}
 		void operator++() {
 			this->data.clear();

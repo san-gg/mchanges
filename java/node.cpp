@@ -13,13 +13,13 @@ FunctionList* JavaLang::getFunctionList() {
 JavaLang::~JavaLang() {
 	if (this->header != nullptr) delete this->header;
 	if (this->functionList != nullptr) delete this->functionList;
+	this->header = nullptr;
+	this->functionList = nullptr;
 }
 
 //~~~~~~~~~~~~ Class JavaClassHeader ~~~~~~~~~~~~
 //
-JavaClassHeader::JavaClassHeader(std::string* p1) : className(*p1), mod(nullptr) {
-	delete p1;
-}
+JavaClassHeader::JavaClassHeader(std::string* p1) : className(*p1), mod(nullptr) { }
 std::string JavaClassHeader::getClassName() {
 	return this->className;
 }
@@ -28,6 +28,7 @@ JavaModifiers* JavaClassHeader::getModifiers() { return this->mod; }
 JavaClassHeader::~JavaClassHeader() {
 	this->className.clear();
 	if (this->mod != nullptr) delete this->mod;
+	this->mod = nullptr;
 }
 
 //~~~~~~~~~~~~ Class FunctionList ~~~~~~~~~~~~
@@ -35,8 +36,8 @@ JavaClassHeader::~JavaClassHeader() {
 void FunctionList::addFunction(JavaFunction* jFun) {
 	this->list.insert(*jFun);
 }
-std::set<JavaFunction> FunctionList::getFunctionList() {
-	return this->list;
+const std::set<JavaFunction>* FunctionList::getFunctionList() {
+	return &this->list;
 }
 FunctionList::~FunctionList() {
 	this->list.clear();
@@ -80,19 +81,19 @@ void JavaFunction::setBodyHash(uint64_t* body) {
 	this->bodyHash[0] = body[0];
 	this->bodyHash[1] = body[1];
 }
+int JavaFunction::cmpBodyHash(const JavaFunction& jFunction) const {
+	if (this->bodyHash[0] != jFunction.bodyHash[0]) return -1;
+	if (this->bodyHash[1] != jFunction.bodyHash[1]) return 1;
+	return 0;
+}
+std::string JavaFunction::getReturnType() const { return this->returnType; }
+std::string JavaFunction::getName() const { return this->name; }
+std::vector<std::string> JavaFunction::getParamList() const { return this->paramList; }
 JavaFunction::~JavaFunction() {
 	this->name.clear();
 	this->returnType.clear();
 	this->paramList.clear();
 }
-void JavaFunction::print() const {
-	std::cout << this->returnType << " " << this->name << '(';
-	for (std::string str : this->paramList) {
-		std::cout << str << ", ";
-	}
-	std::cout << ") " << this->bodyHash[0] << this->bodyHash[1] << std::endl;
-}
-
 
 //~~~~~~~~~~~~ Class Parameters ~~~~~~~~~~~~
 //
@@ -110,7 +111,7 @@ Parameters::~Parameters() {
 //~~~~~~~~~~~~ Class JavaModifiers ~~~~~~~~~~~~
 //
 JavaModifiers::JavaModifiers() {
-	this->jscope = nullptr;
+	this->jscope.scope = JavaScope::Scope::DEFAULT;
 	this->_static = false;
 	this->synchronized = false;
 	this->native = false;
@@ -122,33 +123,23 @@ void JavaModifiers::setSynchronized() { this->synchronized = true; }
 void JavaModifiers::setNative() { this->native = true; }
 void JavaModifiers::setStrictfp() { this->strictfp = true; }
 void JavaModifiers::setAbstract() { this->_abstract = true; }
-void JavaModifiers::setScope(JavaScope* scope) { this->jscope = scope; }
-JavaScope::Scope JavaModifiers::getScope() {
-	return (this->jscope != nullptr) ? this->jscope->getScope() : JavaScope::Scope::DEFAULT;
-}
+void JavaModifiers::setScope(JavaScope* scope) { this->jscope = scope->scope; }
+JavaScope::Scope JavaModifiers::getScope() { return this->jscope.scope; }
 bool JavaModifiers::isStatic() { return this->_static; }
 bool JavaModifiers::isSynchronized() { return this->synchronized; }
 bool JavaModifiers::isNative() { return this->native; }
 bool JavaModifiers::isStrictfp() { return this->strictfp; }
 bool JavaModifiers::isAbstract() { return this->_abstract; }
 void JavaModifiers::operator=(JavaModifiers &mod) {
-	JavaScope::Scope scope = mod.getScope();
-	this->jscope = new JavaScope(scope);
+	this->jscope.scope = mod.getScope();
 	this->_abstract = mod._abstract;
 	this->_static = mod._static;
 	this->native = mod.native;
 	this->strictfp = mod.strictfp;
 	this->synchronized = mod.synchronized;
 }
-JavaModifiers::~JavaModifiers() {
-	if (jscope != nullptr)
-		delete jscope;
-}
 
 
 //~~~~~~~~~~~~ Class JavaScope ~~~~~~~~~~~~
 //
 JavaScope::JavaScope(JavaScope::Scope p1) : scope(p1) { };
-JavaScope::Scope JavaScope::getScope() const {
-	return this->scope;
-}

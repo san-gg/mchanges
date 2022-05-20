@@ -17,11 +17,10 @@ public:
 		DEFAULT = 3
 	}scope;
 	JavaScope(JavaScope::Scope = JavaScope::Scope::DEFAULT);
-	JavaScope::Scope getScope() const;
 };
 
 class JavaModifiers {
-	JavaScope* jscope;
+	JavaScope jscope;
 	bool _static;
 	bool synchronized;
 	bool native;
@@ -43,7 +42,6 @@ public:
 	bool isNative();
 	bool isStrictfp();
 	bool isAbstract();
-	~JavaModifiers();
 };
 
 class JavaClassHeader {
@@ -78,7 +76,10 @@ public:
 	void setParameters(Parameters*);
 	void setBodyHash(uint64_t*);
 	bool operator < (const JavaFunction&) const;
-	void print() const;
+	int cmpBodyHash(const JavaFunction&) const;
+	std::string getReturnType() const;
+	std::string getName() const;
+	std::vector<std::string> getParamList() const;
 	~JavaFunction();
 };
 
@@ -86,7 +87,7 @@ class FunctionList {
 	std::set<JavaFunction> list;
 public:
 	void addFunction(JavaFunction*);
-	std::set<JavaFunction> getFunctionList();
+	const std::set<JavaFunction>* getFunctionList();
 	~FunctionList();
 };
 

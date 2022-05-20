@@ -565,7 +565,7 @@ namespace yy {
     break;
 
   case 7:
-                                { (yylhs.value.classHeader) = new JavaClassHeader((yystack_[0].value.str)); }
+                                { (yylhs.value.classHeader) = new JavaClassHeader((yystack_[0].value.str)); delete (yystack_[0].value.str); }
     break;
 
   case 8:
@@ -677,7 +677,7 @@ namespace yy {
     break;
 
   case 29:
-                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); }
+                                                                        { (yylhs.value.modifiers) = new JavaModifiers(); (yylhs.value.modifiers)->setScope((yystack_[0].value.scope)); delete (yystack_[0].value.scope); }
     break;
 
   case 30:

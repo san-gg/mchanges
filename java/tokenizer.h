@@ -2,6 +2,8 @@
 #ifndef __TOKENIZER_
 #define __TOKENIZER_
 #define TOKENS int
+#define _HAS_ITERATOR_DEBUGGING 0
+#define _REGEX_MAX_STACK_COUNT 100000L
 #include <regex>
 #include <fstream>
 #include <vector>
@@ -90,12 +92,12 @@ class Tokenizer {
 	std::string concateTypes();
 	uint64_t* get_yylex_body();
 public:
-	bool isComment = false;
-	bool skipExpression = false;
 	Tokenizer();
 	void setFileName(const char*);
 	TOKENS yylex(yy::parser::semantic_type*);
 	void closeFile();
 	void changeBodyRegex();
+	int lineNo();
+	~Tokenizer();
 };
 #endif // !__TOKENIZER_

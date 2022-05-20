@@ -1,13 +1,10 @@
 #include <iostream>
 #include "arguments.h"
 
-std::string ArgumentParser::get_directory1() {
-	return this->directory1;
-}
-
-std::string ArgumentParser::get_directory2() {
-	return this->directory2;
-}
+std::string ArgumentParser::get_directory1() { return this->directory1; }
+std::string ArgumentParser::get_directory2() { return this->directory2; }
+std::string ArgumentParser::get_clist() { return this->clist; }
+std::string ArgumentParser::get_explist() { return this->exp; }
 
 int ArgumentParser::strcompare(const char * s1, const char * s2) {
 	int x = 0;

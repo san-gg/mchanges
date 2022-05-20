@@ -124,19 +124,22 @@ bool JavaIgnoreGrammar::isIIB() {
 
 Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0),
 						doBodyRegex(false), innerClass(false) {
-	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|(\"(?:\\\\.|[^\\\\\"])*\")|('(?:\\\\.|[^\\\\'])*')|([{}(),<>=;@\\[\\]?]|[\\w]+)");
-	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"']+");
+	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}(),<>=;@\\[\\]?]|[\\w]+");
+	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"'/*]+|[*]+(?=\\*\\/)|[*]+");
 	this->file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 }
 
 void Tokenizer::setFileName(const char* fileName) {
-	this->isComment = false;
+	try { this->file.close(); }
+	catch (...) {}
+	this->lineno = 0;
+	this->token_index = 0;
 	this->doBodyRegex = false;
-	this->skipExpression = false;
+	this->innerClass = false;
 	this->data.clear();
 	this->token_buffer.clear();
 	this->tokenItr = this->endTokenItr;
-	file.open(fileName);
+	this->file.open(fileName);
 }
 
 bool Tokenizer::getNewLineM() {
@@ -194,8 +197,8 @@ void Tokenizer::skipBlock() {
 				skipComments(this->tokenItr->str(0));
 				continue;
 			}
-			else if (this->tokenItr->str(4).compare("{") == 0) stack += 1;
-			else if (this->tokenItr->str(4).compare("}") == 0) stack -= 1;
+			else if (this->tokenItr->str(0).compare("{") == 0) stack += 1;
+			else if (this->tokenItr->str(0).compare("}") == 0) stack -= 1;
 			this->tokenItr++;
 		}
 		else if (!getNewLineM())
@@ -207,8 +210,8 @@ void Tokenizer::skipAssignment() {
 	while (true) {
 		if (this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0) skipComments(this->tokenItr->str(0));
-			else if (this->tokenItr->str(4).compare("{") == 0) skipBlock();
-			else if (this->tokenItr->str(4).compare(";") == 0) break;
+			else if (this->tokenItr->str(0).compare("{") == 0) skipBlock();
+			else if (this->tokenItr->str(0).compare(";") == 0) break;
 			else this->tokenItr++;
 		}
 		else if (!getNewLineM())
@@ -227,11 +230,11 @@ bool Tokenizer::skipAnnotation() {
 				skipComments(this->tokenItr->str(1));
 				continue;
 			}
-			else if (this->tokenItr->str(4).compare("(") == 0) {
+			else if (this->tokenItr->str(0).compare("(") == 0) {
 				annotationWithParam = true;
 				stack += 1;
 			}
-			else if (this->tokenItr->str(4).compare(")") == 0)
+			else if (this->tokenItr->str(0).compare(")") == 0)
 				stack -= 1;
 			if (stack == 0) break;
 			this->tokenItr++;
@@ -255,10 +258,10 @@ std::string Tokenizer::concateTypes() {
 			int cmp3 = this->tokenItr->str(3).compare("");
 
 			if (cmp1 != 0 || cmp2 != 0 || cmp3 != 0) throw yy::parser::syntax_error("");
-			else if (this->tokenItr->str(4).compare("<") == 0) stack += 1;
-			else if (this->tokenItr->str(4).compare(">") == 0) stack -= 1;
+			else if (this->tokenItr->str(0).compare("<") == 0) stack += 1;
+			else if (this->tokenItr->str(0).compare(">") == 0) stack -= 1;
 
-			typeStr.append(this->tokenItr->str(4));
+			typeStr.append(this->tokenItr->str(0));
 			this->tokenItr++;
 		}
 		else if (!getNewLineM()) {
@@ -269,7 +272,7 @@ std::string Tokenizer::concateTypes() {
 }
 
 void Tokenizer::appendTypeArray() {
-	const std::string& token = this->tokenItr->str(4);
+	const std::string& token = this->tokenItr->str(0);
 	int tf = this->token_buffer.size() - 1;
 
 	if (tf == 0) {
@@ -297,7 +300,7 @@ void Tokenizer::skipToToken(const char* token) {
 		if(this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0)
 				skipComments(this->tokenItr->str(1));
-			else if (this->tokenItr->str(4).compare(token) == 0)
+			else if (this->tokenItr->str(0).compare(token) == 0)
 				break;
 			else this->tokenItr++;
 		}
@@ -314,16 +317,16 @@ bool Tokenizer::addTokenBuffer() {
 		if (this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0)
 				skipComments(this->tokenItr->str(0));
-			else if (this->tokenItr->str(4).compare("<") == 0) {
+			else if (this->tokenItr->str(0).compare("<") == 0) {
 				std::string type = concateTypes();
 				this->token_buffer[this->token_buffer.size() - 1].append(type);
 				type.clear();
 			}
-			else if (this->tokenItr->str(4).compare("[") == 0 ||
-					this->tokenItr->str(4).compare("]") == 0) {
+			else if (this->tokenItr->str(0).compare("[") == 0 ||
+					this->tokenItr->str(0).compare("]") == 0) {
 				appendTypeArray();
 			}
-			else if (this->tokenItr->str(4).compare("class") == 0 && this->innerClass) {
+			else if (this->tokenItr->str(0).compare("class") == 0 && this->innerClass) {
 				this->token_buffer.clear();
 				skipToToken("{");
 				skipBlock();
@@ -461,5 +464,16 @@ void Tokenizer::changeBodyRegex() {
 }
 
 void Tokenizer::closeFile() {
-	this->file.close();
+	try { this->file.close(); }
+	catch (...) {}
+}
+
+int Tokenizer::lineNo() {
+	return this->lineno;
+}
+
+Tokenizer::~Tokenizer() {
+	try { this->file.close(); }
+	catch (...) {}
+	this->token_buffer.clear();
 }
