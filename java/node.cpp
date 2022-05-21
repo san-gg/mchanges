@@ -4,6 +4,7 @@
 //~~~~~~~~~~~~ Class JavaLang ~~~~~~~~~~~~
 //
 JavaLang::JavaLang(JavaClassHeader* p1, FunctionList* p2) : header(p1), functionList(p2) { }
+JavaLang::JavaLang(JavaClassHeader* p1) : header(p1) { this->functionList = new FunctionList(); }
 JavaClassHeader* JavaLang::getClassHeader() {
 	return this->header;
 }

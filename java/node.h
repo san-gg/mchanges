@@ -95,6 +95,7 @@ class JavaLang {
 	JavaClassHeader* header;
 	FunctionList* functionList;
 public:
+	JavaLang(JavaClassHeader*);
 	JavaLang(JavaClassHeader*, FunctionList*);
 	JavaClassHeader* getClassHeader();
 	FunctionList* getFunctionList();
