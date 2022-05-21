@@ -24,33 +24,33 @@ class JavaIgnoreGrammar {
 		Assignment  : STRINGS '='
 		StaticBlock : 'static' '{'
 		Annotation  : '@' STRINGS
-		imp_pack	: import STRINGS ';'
-					| package STRINGS ';'
-		IIB			: '{'
-		STRINGS		: Text
-					| <
-					| ,
-					| >
+		Semicolon   : STRINGS ';'
+		Interface   : STRINGS interface
+		IIB         : '{'
+		STRINGS     : Text | < | ,| > | { | } | ( | )
 		//~~Simple~~
 	*/
 	int staticShift;
 	int assignmentShift;
 	int annotationShift;
-	int importShift;
+	int semicolonShift;
 	int iibShift;
+	int interfaceShift;
 	enum class grammar {
 		NONE = 0,
 		StaticBlock = 1,
 		Assignment = 2,
 		Annotation = 3,
-		Imports = 4,
-		IIB = 5
+		Semicolon = 4,
+		Interface = 5,
+		IIB = 6
 	} ignoreGrammar;
 
 	void checkStatic(const std::string&);
 	void checkAssignment(const std::string&);
 	void checkAnnotation(const std::string&);
-	void checkImport(const std::string&);
+	void checkSemicolon(const std::string&);
+	void checkInterface(const std::string&);
 	void checkIIB(const std::string&, size_t);
 	void clearState();
 public:
@@ -59,7 +59,8 @@ public:
 	bool isStatic();
 	bool isAssignment();
 	bool isAnnotation();
-	bool isImport();
+	bool isSemicolon();
+	bool isInterface();
 	bool isIIB();
 };
 

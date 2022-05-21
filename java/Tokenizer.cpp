@@ -5,14 +5,15 @@
 #include "grammar.h"
 
 JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0),
-										importShift(0), iibShift(0),
+										semicolonShift(0), iibShift(0), interfaceShift(0),
 										ignoreGrammar(JavaIgnoreGrammar::grammar::NONE) { }
 
 void JavaIgnoreGrammar::clearState() {
 	this->staticShift = 0;
 	this->annotationShift = 0;
 	this->assignmentShift = 0;
-	this->importShift = 0;
+	this->semicolonShift = 0;
+	this->interfaceShift = 0;
 	this->iibShift = 0;
 	this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
 }
@@ -40,16 +41,22 @@ void JavaIgnoreGrammar::checkAnnotation(const std::string& token) {
 	else if (this->annotationShift == 1)
 		this->annotationShift = 2;
 }
-void JavaIgnoreGrammar::checkImport(const std::string& token) {
-	int cmp1 = token.compare("import");
-	int cmp2 = token.compare(";");
-	int cmp3 = token.compare("package");
-	if (this->importShift == 1 && (cmp1 == 0 || cmp3 == 0))
+void JavaIgnoreGrammar::checkSemicolon(const std::string& token) {
+	int cmp = token.compare(";");
+	if (this->semicolonShift == 1 && cmp == 0)
 		throw yy::parser::syntax_error("Invalid import statement");
-	else if (this->importShift == 0 && (cmp1 == 0 || cmp3 == 0))
-		this->importShift = 1;
-	else if (this->importShift == 1 && cmp2 == 0)
-		this->importShift = 2;
+	else if (this->semicolonShift == 0 && cmp == 0)
+		this->semicolonShift = 1;
+}
+void JavaIgnoreGrammar::checkInterface(const std::string& token) {
+	int cmp1 = token.compare("interface");
+	int cmp2 = token.compare("{");
+	if (this->interfaceShift == 1 && cmp1 == 0)
+		throw yy::parser::syntax_error("Error at interface keyword (2 interface keyword found)");
+	else if (this->interfaceShift == 0 && cmp1 == 0)
+		this->interfaceShift = 1;
+	else if (this->interfaceShift == 1 && cmp2 == 0)
+		this->interfaceShift = 2;
 }
 void JavaIgnoreGrammar::checkIIB(const std::string& token, size_t tokenBlockSize) {
 	int cmp = token.compare("{");
@@ -62,7 +69,8 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockS
 	checkStatic(token);
 	checkAssignment(token);
 	checkAnnotation(token);
-	checkImport(token);
+	checkSemicolon(token);
+	checkInterface(token);
 	checkIIB(token, tokenBlockSize);
 
 
@@ -82,9 +90,14 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockS
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Assignment;
 		return 1;
 	}
-	else if (this->importShift == 2) {
+	else if (this->semicolonShift == 1) {
 		clearState();
-		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Imports;
+		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Semicolon;
+		return 1;
+	}
+	else if (this->interfaceShift == 2) {
+		clearState();
+		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Interface;
 		return 1;
 	}
 	else if (this->iibShift == 1) {
@@ -97,7 +110,9 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockS
 	if (token.compare("(") == 0 ||
 		token.compare(")") == 0 ||
 		token.compare("}") == 0 ||
-		(this->staticShift == 0 && token.compare("{") == 0))
+		(this->staticShift == 0 && token.compare("{") == 0) ||
+		(this->interfaceShift == 0 && token.compare("{") == 0)
+	)
 	{
 		clearState();
 		return -1;
@@ -115,8 +130,11 @@ bool JavaIgnoreGrammar::isAssignment() {
 bool JavaIgnoreGrammar::isAnnotation() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Annotation;
 }
-bool JavaIgnoreGrammar::isImport() {
-	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Imports;
+bool JavaIgnoreGrammar::isSemicolon() {
+	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Semicolon;
+}
+bool JavaIgnoreGrammar::isInterface() {
+	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Interface;
 }
 bool JavaIgnoreGrammar::isIIB() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::IIB;
@@ -337,11 +355,11 @@ bool Tokenizer::addTokenBuffer() {
 				if (doIgnore == -1) break;
 				else if (doIgnore == 1) {
 					this->token_buffer.clear();
-					if (this->ignoreGrammar.isStatic()) skipBlock();
+					if (this->ignoreGrammar.isStatic() || this->ignoreGrammar.isInterface()) skipBlock();
 					else if (this->ignoreGrammar.isAssignment()) skipAssignment();
 					else if (this->ignoreGrammar.isAnnotation()) skipAnnotation();
 					else if (this->ignoreGrammar.isIIB()) skipBlock();
-					else if (this->ignoreGrammar.isImport()) this->tokenItr++;
+					else if (this->ignoreGrammar.isSemicolon()) this->tokenItr++;
 				}
 				else this->tokenItr++;
 			}
