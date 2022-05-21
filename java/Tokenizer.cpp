@@ -490,6 +490,10 @@ int Tokenizer::lineNo() {
 	return this->lineno;
 }
 
+bool Tokenizer::classStatus() {
+	return this->innerClass;
+}
+
 Tokenizer::~Tokenizer() {
 	try { this->file.close(); }
 	catch (...) {}

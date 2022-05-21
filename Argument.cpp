@@ -73,11 +73,11 @@ void ArgumentParser::printHelp() {
 	std::cout << "    Addition parameter:\n";
 	std::cout << "    --clist list of selective java files to be considered. Path mentioned in\n";
 	std::cout << "       file.txt needs to be relative to the mentioned directory in --dir1 and --dir2.\n";
-	std::cout << "    --exp java paths that will be ignored.\n\n";
+	std::cout << "    --exp java paths that will be ignored. (Future Scope)\n\n";
 	std::cout << "Parameter List:\n";
 	std::cout << "    --dir1    directory     Directory path\n";
 	std::cout << "    --dir2    directory     Directory path. Java files will be compared with --dir1\n";
 	std::cout << "    --clist   file.txt      List of selective java files.\n";
-	std::cout << "    --exp     file.txt      Paths that will be ignored.\n";
+	std::cout << "    --exp     file.txt      Paths that will be ignored. (Future Scope)\n";
 	return;
 }

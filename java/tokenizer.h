@@ -98,6 +98,7 @@ public:
 	TOKENS yylex(yy::parser::semantic_type*);
 	void closeFile();
 	void changeBodyRegex();
+	bool classStatus();
 	int lineNo();
 	~Tokenizer();
 };
