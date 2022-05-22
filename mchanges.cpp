@@ -48,20 +48,22 @@ void printCSV(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv) {
 	for (const JavaFunction& jf2 : *functions2) {
 		auto jf1 = functions1->find(jf2);
 		if ((jf1 != endFunc) && ((*jf1).cmpBodyHash(jf2) != 0)) {
-			content.append("\"class ");
+			content.append("\"class    ");
 			content.append(className);
 			content.append("\",\"");
 			content.append(jf2.getReturnType());
-			content.append(" ");
+			content.append("    ");
 			content.append(jf2.getName());
-			content.append("(");
+			content.append(" (");
 
+			bool flag = false;
 			const std::vector<std::string>& param = jf2.getParamList();
 			for (std::string tmp : param) {
+				flag = true;
 				content.append(tmp);
-				content.append(",");
+				content.append(", ");
 			}
-			content[content.length() - 1] = ')';
+			if(flag) content[content.length() - 1] = ')';
 			content.append("\"\n");
 			csv << content;
 			content.erase();
