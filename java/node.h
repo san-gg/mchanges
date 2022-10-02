@@ -26,6 +26,7 @@ class JavaModifiers {
 	bool native;
 	bool strictfp;
 	bool _abstract;
+	bool _final;
 public:
 	JavaModifiers();
 	void setStatic();
@@ -33,6 +34,7 @@ public:
 	void setNative();
 	void setStrictfp();
 	void setAbstract();
+	void setFinal();
 	void setScope(JavaScope*);
 	void operator=(JavaModifiers&);
 
@@ -42,6 +44,7 @@ public:
 	bool isNative();
 	bool isStrictfp();
 	bool isAbstract();
+	bool isFinal();
 };
 
 class JavaClassHeader {
@@ -102,4 +105,9 @@ public:
 	~JavaLang();
 };
 
+static void checkArrayType(std::string* str1, std::string* str2) {
+	if (str2->at(str2->size() - 1) == ']') {
+		str1->append("[]");
+	}
+}
 #endif // !__NODE_

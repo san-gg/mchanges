@@ -9,11 +9,11 @@ extern JavaLang* jLang;
 class WrrapperParser : public yy::parser {
 	Tokenizer tokens;
 public:
-	void error(const std::string& err) {
+	void error(const std::string& msg) {
 		if (!tokens.classStatus())
 			std::cout << "No class definition found. Note: interface will be ignored\n";
 		else
-			std::cerr << err << " : line no : " << this->tokens.lineNo() << std::endl;
+			std::cerr << msg << " : line no : " << this->tokens.lineNo() << std::endl;
 	}
 	void setFile(const char* file) {
 		tokens.setFileName(file);
@@ -28,6 +28,10 @@ public:
 		tokens.changeBodyRegex();
 	}
 };
+
+//void error(const std::string& err) {
+//	std::cout << "lol\n";
+//}
 
 bool fill_exp(std::string& list, std::set<std::string>& expfile) {
 	std::ifstream file;
@@ -73,6 +77,8 @@ void printCSV(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv) {
 
 int main(int argc, char** argv) {
 	std::ofstream csv;
+	size_t noOfFiles = 0;
+	size_t noOfErrors = 0;
 	if (argc <= 1) {
 		std::cout << "Invalid argument. Check --help for more info.\n";
 		return 1;
@@ -89,6 +95,8 @@ int main(int argc, char** argv) {
 		std::cout << "Invalid argument. Check --help for more info.\n";
 		return 1;
 	}
+
+	std::cout << "Initializing...\n";
 
 	std::string dir1 = argParse.get_directory1();
 	std::string dir2 = argParse.get_directory2();
@@ -117,18 +125,21 @@ int main(int argc, char** argv) {
 	WrrapperParser parser;
 	std::string dir1_file;
 	dir1_file.reserve(1024);
+	std::cout << "Parsing started...\n";
 	for (const std::string& dir2_file : files) {
 		JavaLang* lang1 = nullptr;
 		JavaLang* lang2 = nullptr;
 		dir1_file.assign(dir1);
 		dir1_file.append(dir2_file.substr(dir2.length()));
 		if (stdfs::exists(dir1_file)) {
+			noOfFiles += 1;
 			try {
 				parser.setFile(dir2_file.c_str());
 				parser.parse();
 				lang1 = jLang;
 				if (jLang == nullptr) {
-					std::cout << "skipping file : " << dir2_file << std::endl;
+					noOfErrors += 1;
+					std::cerr << "skipping file : " << dir2_file << std::endl << std::endl;
 					continue;
 				}
 				jLang = nullptr;
@@ -136,7 +147,8 @@ int main(int argc, char** argv) {
 				parser.parse();
 				lang2 = jLang;
 				if (jLang == nullptr) {
-					std::cout << "skipping file : " << dir1_file << std::endl;
+					noOfErrors += 1;
+					std::cerr << "skipping file : " << dir1_file << std::endl << std::endl;
 					delete lang1;
 					continue;
 				}
@@ -163,7 +175,9 @@ int main(int argc, char** argv) {
 		dir1_file.erase();
 	}
 	csv.close();
-	std::cout << "\nEND\n";
+	std::cout << "\n\t[COMPLETED]\n\t\tTotal files parsed : " << noOfFiles;
+	std::cout << "\n\t\tSkipped files      : " << noOfErrors << std::endl;
+	// if (noOfErrors > 0) std::cout << "    [Note. Check m.errors.log for the errors.]\n";
 	return 0;
 }
 

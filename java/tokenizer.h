@@ -3,7 +3,7 @@
 #define __TOKENIZER_
 #define TOKENS int
 #define _HAS_ITERATOR_DEBUGGING 0
-#define _REGEX_MAX_STACK_COUNT 100000L
+#define _REGEX_MAX_STACK_COUNT 10000000L
 #include <regex>
 #include <fstream>
 #include <vector>
@@ -62,6 +62,7 @@ public:
 	bool isSemicolon();
 	bool isInterface();
 	bool isIIB();
+	void resetEverything();
 };
 
 class Tokenizer {

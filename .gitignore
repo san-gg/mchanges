@@ -1,0 +1,9 @@
+.vs/
+test/
+dot/
+x64/
+*.vcxproj*
+*.csv
+*.txt
+*.zip
+*.sh

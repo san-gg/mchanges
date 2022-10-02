@@ -1,7 +1,9 @@
-%{
-#include "node.h"
-JavaLang *jLang = nullptr;
-%}
+%code requires { #include "node.h" }
+
+%code {
+    JavaLang *jLang = nullptr;
+    extern void checkArrayType(std::string*, std::string*); 
+}
 
 %union {
 	JavaClassHeader *classHeader;
@@ -16,7 +18,7 @@ JavaLang *jLang = nullptr;
 
 %token O_BRACE C_BRACE T_CLASS ERROR O_PARAM C_PARAM
 %token STATIC ABSTRACT STRICTFP SYNCHRONIZED NATIVE
-%token PUBLIC PRIVATE PROTECTED DEFAULT
+%token PUBLIC PRIVATE PROTECTED DEFAULT FINAL
 %token COMMA
 %token <str> STRINGS
 %token <bodyHash> BODY
@@ -70,29 +72,37 @@ function_header : modifiers STRINGS STRINGS   { $$ = new JavaFunction($2, $3); $
                 ;
 
 parameters : O_PARAM C_PARAM                            { $$ = new Parameters(); yylexBody(); }
-           | O_PARAM STRINGS STRINGS C_PARAM            { $$ = new Parameters(); $$->addParameter($2);
+           | O_PARAM STRINGS STRINGS C_PARAM            { checkArrayType($2, $3);
+                                                          $$ = new Parameters(); $$->addParameter($2);
                                                           delete $2; delete $3; yylexBody();
                                                         }
-           | O_PARAM STRINGS STRINGS STRINGS C_PARAM    { $$ = new Parameters(); $$->addParameter($3);
-                                                          delete $2; delete $3; delete $4; yylexBody();
+           | O_PARAM FINAL STRINGS STRINGS C_PARAM      { checkArrayType($3, $4);
+                                                          $$ = new Parameters(); $$->addParameter($3);
+                                                          delete $3; delete $4; yylexBody();
                                                         }
-           | O_PARAM STRINGS STRINGS COMMA              { $$ = new Parameters(); $$->addParameter($2);
+           | O_PARAM STRINGS STRINGS COMMA              { checkArrayType($2, $3);
+                                                          $$ = new Parameters(); $$->addParameter($2);
                                                           delete $2; delete $3;
                                                         }
-           | O_PARAM STRINGS STRINGS STRINGS COMMA      { $$ = new Parameters(); $$->addParameter($3);
-                                                          delete $2; delete $3; delete $4;
+           | O_PARAM FINAL STRINGS STRINGS COMMA        { checkArrayType($3, $4);
+                                                          $$ = new Parameters(); $$->addParameter($3);
+                                                          delete $3; delete $4;
                                                         }
-           | parameters STRINGS STRINGS COMMA           { $$ = $1; $1->addParameter($2);
+           | parameters STRINGS STRINGS COMMA           { checkArrayType($2, $3);
+                                                          $$ = $1; $1->addParameter($2);
                                                           delete $2; delete $3;
                                                         }
-           | parameters STRINGS STRINGS STRINGS COMMA   { $$ = $1; $1->addParameter($3);
-                                                          delete $2; delete $3; delete $4;
+           | parameters FINAL STRINGS STRINGS COMMA     { checkArrayType($3, $4);
+                                                          $$ = $1; $1->addParameter($3);
+                                                          delete $3; delete $4;
                                                         }
-           | parameters STRINGS STRINGS C_PARAM         { $$ = $1; $1->addParameter($2);
+           | parameters STRINGS STRINGS C_PARAM         { checkArrayType($2, $3);
+                                                          $$ = $1; $1->addParameter($2);
                                                           delete $2; delete $3; yylexBody();
                                                         }
-           | parameters STRINGS STRINGS STRINGS C_PARAM { $$ = $1; $1->addParameter($3);
-                                                          delete $2; delete $3; delete $4; yylexBody();
+           | parameters FINAL STRINGS STRINGS C_PARAM   { checkArrayType($3, $4);
+                                                          $$ = $1; $1->addParameter($3);
+                                                          delete $3; delete $4; yylexBody();
                                                         }
            ;
 
@@ -101,12 +111,14 @@ modifiers : modifiers STATIC          { $1->setStatic(); $$ = $1; }
           | modifiers STRICTFP        { $1->setStrictfp(); $$ = $1; }
           | modifiers SYNCHRONIZED    { $1->setSynchronized(); $$ = $1;}
           | modifiers NATIVE          { $1->setNative(); $$ = $1; }
+          | modifiers FINAL           { $1->setFinal(); $$ = $1; }
           | scope                     { $$ = new JavaModifiers(); $$->setScope($1); delete $1; }
           | STATIC                    { $$ = new JavaModifiers(); $$->setStatic(); }
           | ABSTRACT                  { $$ = new JavaModifiers(); $$->setAbstract(); }
           | STRICTFP                  { $$ = new JavaModifiers(); $$->setStrictfp(); }
           | SYNCHRONIZED              { $$ = new JavaModifiers(); $$->setSynchronized(); }
           | NATIVE                    { $$ = new JavaModifiers(); $$->setNative(); }
+          | FINAL                     { $$ = new JavaModifiers(); $$->setFinal(); }
           ;
 
 scope : PUBLIC        { $$ = new JavaScope(JavaScope::Scope::PUBLIC); }

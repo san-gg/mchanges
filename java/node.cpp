@@ -118,12 +118,14 @@ JavaModifiers::JavaModifiers() {
 	this->native = false;
 	this->strictfp = false;
 	this->_abstract = false;
+	this->_final = false;
 }
 void JavaModifiers::setStatic() { this->_static = true; }
 void JavaModifiers::setSynchronized() { this->synchronized = true; }
 void JavaModifiers::setNative() { this->native = true; }
 void JavaModifiers::setStrictfp() { this->strictfp = true; }
 void JavaModifiers::setAbstract() { this->_abstract = true; }
+void JavaModifiers::setFinal() { this->_final = true; }
 void JavaModifiers::setScope(JavaScope* scope) { this->jscope = scope->scope; }
 JavaScope::Scope JavaModifiers::getScope() { return this->jscope.scope; }
 bool JavaModifiers::isStatic() { return this->_static; }
@@ -131,6 +133,7 @@ bool JavaModifiers::isSynchronized() { return this->synchronized; }
 bool JavaModifiers::isNative() { return this->native; }
 bool JavaModifiers::isStrictfp() { return this->strictfp; }
 bool JavaModifiers::isAbstract() { return this->_abstract; }
+bool JavaModifiers::isFinal() { return this->_final; }
 void JavaModifiers::operator=(JavaModifiers &mod) {
 	this->jscope.scope = mod.getScope();
 	this->_abstract = mod._abstract;

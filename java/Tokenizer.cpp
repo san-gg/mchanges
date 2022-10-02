@@ -18,6 +18,10 @@ void JavaIgnoreGrammar::clearState() {
 	this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
 }
 
+void JavaIgnoreGrammar::resetEverything() {
+	clearState();
+}
+
 void JavaIgnoreGrammar::checkStatic(const std::string& token) {
 	int cmp1 = token.compare("static");
 	int cmp2 = token.compare("{");
@@ -292,24 +296,9 @@ std::string Tokenizer::concateTypes() {
 void Tokenizer::appendTypeArray() {
 	const std::string& token = this->tokenItr->str(0);
 	int tf = this->token_buffer.size() - 1;
-
-	if (tf == 0) {
-		this->token_buffer[0].append(token);
+	if (token.compare("[") == 0) {
+		this->token_buffer[this->token_buffer.size() - 1].append("[]");
 	}
-	else if (token.compare("]") == 0) {
-		int len = this->token_buffer[tf].length() - 1;
-		if (this->token_buffer[tf].at(len) == '[')
-			this->token_buffer[tf].append("]");
-		else
-			this->token_buffer[tf - 1].append("]");
-	}
-	else {
-		std::string& value = this->token_buffer[tf - 1];
-		if (value.compare("(") == 0 || value.compare(",") == 0)
-			this->token_buffer[tf].append("[");
-		else
-			value.append("[");
-	} 
 	this->tokenItr++;
 }
 
@@ -345,6 +334,7 @@ bool Tokenizer::addTokenBuffer() {
 				appendTypeArray();
 			}
 			else if (this->tokenItr->str(0).compare("class") == 0 && this->innerClass) {
+				this->ignoreGrammar.resetEverything();
 				this->token_buffer.clear();
 				skipToToken("{");
 				skipBlock();
@@ -384,6 +374,7 @@ TOKENS Tokenizer::get_yylex_token(yy::parser::semantic_type* val, std::string& t
 	else if (token.compare("static") == 0) tokenNo = yy::parser::token::yytokentype::STATIC;
 	else if (token.compare("strictfp") == 0) tokenNo = yy::parser::token::yytokentype::STRICTFP;
 	else if (token.compare("synchronized") == 0) tokenNo = yy::parser::token::yytokentype::SYNCHRONIZED;
+	else if (token.compare("final") == 0) tokenNo = yy::parser::token::yytokentype::FINAL;
 	else if (token.compare("(") == 0) tokenNo = yy::parser::token::yytokentype::O_PARAM;
 	else if (token.compare(")") == 0) tokenNo = yy::parser::token::yytokentype::C_PARAM;
 	else if (token.compare("class") == 0) {

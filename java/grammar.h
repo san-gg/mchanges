@@ -43,6 +43,9 @@
 
 #ifndef YY_YY_GRAMMAR_TAB_HH_INCLUDED
 # define YY_YY_GRAMMAR_TAB_HH_INCLUDED
+// "%code requires" blocks.
+ #include "node.h" 
+
 
 
 # include <cstdlib> // std::abort
@@ -50,7 +53,6 @@
 # include <stdexcept>
 # include <string>
 # include <vector>
-# include "node.h"
 
 #if defined __cplusplus
 # define YY_CPLUSPLUS __cplusplus
@@ -234,9 +236,10 @@ namespace yy {
         PRIVATE = 270,
         PROTECTED = 271,
         DEFAULT = 272,
-        COMMA = 273,
-        STRINGS = 274,
-        BODY = 275
+        FINAL = 273,
+        COMMA = 274,
+        STRINGS = 275,
+        BODY = 276
       };
     };
 
@@ -462,10 +465,10 @@ namespace yy {
     static const signed char yyr2_[];
 
 
-
+#if YYDEBUG
     /// For a symbol, its name in clear.
     static const char* const yytname_[];
-#if YYDEBUG
+
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const signed char yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
@@ -694,10 +697,10 @@ namespace yy {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 76,     ///< Last index in yytable_.
+      yylast_ = 82,     ///< Last index in yytable_.
       yynnts_ = 10,  ///< Number of nonterminal symbols.
-      yyfinal_ = 17, ///< Termination state number.
-      yyntokens_ = 21  ///< Number of tokens.
+      yyfinal_ = 18, ///< Termination state number.
+      yyntokens_ = 22  ///< Number of tokens.
     };
 
 
