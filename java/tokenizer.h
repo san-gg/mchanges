@@ -2,22 +2,17 @@
 #ifndef __TOKENIZER_
 #define __TOKENIZER_
 #define TOKENS int
-#define _HAS_ITERATOR_DEBUGGING 0
-#define _REGEX_MAX_STACK_COUNT 10000000L
-#include <regex>
+//#define _HAS_ITERATOR_DEBUGGING 0
+//#define _REGEX_MAX_STACK_COUNT 10000000L
+//#include <regex>
+#include <boost/regex.hpp>
 #include <fstream>
 #include <vector>
 #include "grammar.h"
 #include "../smhasher/MurmurHash3.h"
 
-class InvalidException : public std::exception {
-public:
-	InvalidException() : exception() { }
-	InvalidException(const char* str) : exception(str) { }
-	char const* what() {
-		return exception::what();
-	}
-};
+constexpr auto MAIN_CONTENT_REGEX = "(\\/\\*|\\*\\/|\\/\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}(),<>=;@?\\[\\]]|[.]+|[\\w]+";
+constexpr auto BODY_REGEX         = "(\\/\\*|\\*\\/|\\/\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"'/*]+";
 
 class JavaIgnoreGrammar {
 	/*
@@ -28,7 +23,7 @@ class JavaIgnoreGrammar {
 		Interface   : STRINGS interface
 		IIB         : '{'
 		STRINGS     : Text | < | ,| > | { | } | ( | )
-		//~~Simple~~
+		enum        : STRING 'enum' STRING {
 	*/
 	int staticShift;
 	int assignmentShift;
@@ -36,6 +31,7 @@ class JavaIgnoreGrammar {
 	int semicolonShift;
 	int iibShift;
 	int interfaceShift;
+	int enumShift;
 	enum class grammar {
 		NONE = 0,
 		StaticBlock = 1,
@@ -43,7 +39,8 @@ class JavaIgnoreGrammar {
 		Annotation = 3,
 		Semicolon = 4,
 		Interface = 5,
-		IIB = 6
+		IIB = 6,
+		Enum = 7
 	} ignoreGrammar;
 
 	void checkStatic(const std::string&);
@@ -52,6 +49,7 @@ class JavaIgnoreGrammar {
 	void checkSemicolon(const std::string&);
 	void checkInterface(const std::string&);
 	void checkIIB(const std::string&, size_t);
+	void checkEnum(const std::string&);
 	void clearState();
 public:
 	JavaIgnoreGrammar();
@@ -62,23 +60,28 @@ public:
 	bool isSemicolon();
 	bool isInterface();
 	bool isIIB();
+	bool isEnum();
 	void resetEverything();
 };
 
 class Tokenizer {
+private:
 	std::string data;
-	std::basic_regex<char> mainContent;
-	std::basic_regex<char> bodyContent;
-	std::basic_regex<char> skipContent;
-	std::sregex_iterator tokenItr;
-	const std::sregex_iterator endTokenItr;
+	std::string javaFileName;
+	boost::basic_regex<char> mainContent;
+	boost::basic_regex<char> bodyContent;
+	boost::basic_regex<char> skipContent;
+	boost::sregex_iterator tokenItr;
+	const boost::sregex_iterator endTokenItr;
 	std::ifstream file;
 	std::vector<std::string> token_buffer;
 	JavaIgnoreGrammar ignoreGrammar;
-	int token_index;
-	size_t lineno;
+	size_t token_index;
 	bool doBodyRegex;
 	bool innerClass;
+	bool takeGenericType;
+	bool checkClass;
+	inline static size_t lineno = 0;
 
 	TOKENS get_yylex_token(yy::parser::semantic_type*, std::string&);
 	bool addTokenBuffer();
@@ -91,6 +94,7 @@ class Tokenizer {
 	bool getNewLineM();
 	bool getNewLineB();
 	bool checkBlockPresent();
+	void assignFileName(const char*);
 	std::string concateTypes();
 	uint64_t* get_yylex_body();
 public:
@@ -100,7 +104,8 @@ public:
 	void closeFile();
 	void changeBodyRegex();
 	bool classStatus();
-	int lineNo();
+	static size_t getLineNo();
 	~Tokenizer();
 };
+
 #endif // !__TOKENIZER_

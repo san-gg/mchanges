@@ -50,11 +50,14 @@ public:
 class JavaClassHeader {
 	std::string className;
 	JavaModifiers* mod;
+	bool genericClass;
 public:
 	JavaClassHeader(std::string*);
 	std::string getClassName();
 	void setModifier(JavaModifiers*);
+	void setGenericClass();
 	JavaModifiers* getModifiers();
+	bool isGenericClass();
 	~JavaClassHeader();
 };
 
@@ -72,17 +75,20 @@ class JavaFunction {
 	std::string name;
 	std::string returnType;
 	std::vector<std::string> paramList;
+	bool genericFunction;
 public:
 	JavaFunction(std::string*, std::string*);
 	JavaFunction(std::string*);
 	void setJavaModifier(JavaModifiers*);
 	void setParameters(Parameters*);
 	void setBodyHash(uint64_t*);
+	void setGenericFunction();
 	bool operator < (const JavaFunction&) const;
 	int cmpBodyHash(const JavaFunction&) const;
 	std::string getReturnType() const;
 	std::string getName() const;
 	std::vector<std::string> getParamList() const;
+	bool isGenericFunction();
 	~JavaFunction();
 };
 
@@ -105,9 +111,4 @@ public:
 	~JavaLang();
 };
 
-static void checkArrayType(std::string* str1, std::string* str2) {
-	if (str2->at(str2->size() - 1) == ']') {
-		str1->append("[]");
-	}
-}
 #endif // !__NODE_

@@ -1,37 +1,35 @@
 #include <iostream>
+#include <signal.h>
 #include "java/grammar.h"
-#include "java/tokenizer.h"
 #include "java/node.h"
 #include "java/javafiles.h"
+#include "java/java_parser.h"
 #include "arguments.h"
 
 extern JavaLang* jLang;
-class WrrapperParser : public yy::parser {
-	Tokenizer tokens;
-public:
-	void error(const std::string& msg) {
-		if (!tokens.classStatus())
-			std::cout << "No class definition found. Note: interface will be ignored\n";
-		else
-			std::cerr << msg << " : line no : " << this->tokens.lineNo() << std::endl;
-	}
-	void setFile(const char* file) {
-		tokens.setFileName(file);
-	}
-	void closeFile() {
-		tokens.closeFile();
-	}
-	int yylex(yy::parser::semantic_type* value) {
-		return tokens.yylex(value);
-	}
-	void yylexBody() {
-		tokens.changeBodyRegex();
-	}
-};
+const char* curr_file = nullptr;
 
-//void error(const std::string& err) {
-//	std::cout << "lol\n";
-//}
+void SignalHandler(int signal) {
+	if (signal == SIGSEGV) {
+		std::cout << "Invalid memory access... potentially bug in the code.\n";
+		if(::curr_file != nullptr) std::cout << "File : " << ::curr_file << std::endl << std::endl;
+	}
+	else if (signal == SIGTERM) {
+		std::cout << "Someone Terminated this program...\n";
+		std::cout << "File : " << ::curr_file << std::endl;
+		std::cout << "Terminated Successfully...\n";
+	}
+	else if (signal == SIGINT) {
+		std::cout << "Okay... Exiting\n";
+	}
+	else if (signal == SIGABRT) { 
+		std::cout << "Unexpected program got aborted\n";
+	}
+	else {
+		std::cout << "Unexpected Terminated.";
+	}
+	exit(1);
+}
 
 bool fill_exp(std::string& list, std::set<std::string>& expfile) {
 	std::ifstream file;
@@ -79,6 +77,11 @@ int main(int argc, char** argv) {
 	std::ofstream csv;
 	size_t noOfFiles = 0;
 	size_t noOfErrors = 0;
+	size_t noOfFileNotFound = 0;
+	signal(SIGTERM, SignalHandler);
+	signal(SIGINT, SignalHandler);
+	signal(SIGSEGV, SignalHandler);
+	signal(SIGABRT, SignalHandler);
 	if (argc <= 1) {
 		std::cout << "Invalid argument. Check --help for more info.\n";
 		return 1;
@@ -122,7 +125,7 @@ int main(int argc, char** argv) {
 	java_files files(dir2);
 	if (!clist.empty()) files.setCustomList(clist);
 
-	WrrapperParser parser;
+	JavaParser parser;
 	std::string dir1_file;
 	dir1_file.reserve(1024);
 	std::cout << "Parsing started...\n";
@@ -134,12 +137,13 @@ int main(int argc, char** argv) {
 		if (stdfs::exists(dir1_file)) {
 			noOfFiles += 1;
 			try {
+				::curr_file = dir2_file.c_str();
 				parser.setFile(dir2_file.c_str());
 				parser.parse();
 				lang1 = jLang;
 				if (jLang == nullptr) {
 					noOfErrors += 1;
-					std::cerr << "skipping file : " << dir2_file << std::endl << std::endl;
+					std::cout << "skipping file : " << dir2_file << std::endl << std::endl;
 					continue;
 				}
 				jLang = nullptr;
@@ -148,36 +152,56 @@ int main(int argc, char** argv) {
 				lang2 = jLang;
 				if (jLang == nullptr) {
 					noOfErrors += 1;
-					std::cerr << "skipping file : " << dir1_file << std::endl << std::endl;
+					std::cout << "skipping file : " << dir1_file << std::endl << std::endl;
 					delete lang1;
 					continue;
 				}
 				printCSV(lang1, lang2, csv);
-				jLang = nullptr;
+				
+				std::cout << dir2_file << " - completed\n";
 			}
-			catch (std::ifstream::failure& e) {
-				std::cout << "caught stream exception\n";
-				std::cout << "  what() : " << e.what() << std::endl;
+			catch (ParserException& e) {
+				const char* str = e.what();
+				std::string tmp(70, '-');
+				std::cerr << tmp << std::endl;
+				std::cerr << "Error   : " << str << std::endl;
+				std::cerr << "File    : " << ::curr_file << std::endl;
+				std::cerr << "line no : " << Tokenizer::getLineNo() << std::endl;
+				std::cerr << tmp << std::endl;
+				noOfErrors += 1;
 			}
-			catch (InvalidException& e) {
-				std::cerr << "InvaildException : " << e.what() << std::endl;
+			catch (std::invalid_argument& e) {
+				std::cerr << "----------------------------------------------------------------------\n";
+				std::cerr << "Something went wrong while parsing.\nFile : " << ::curr_file << std::endl;
+				std::cerr << e.what() << std::endl;
+				std::cerr << "----------------------------------------------------------------------\n\n";
+				noOfErrors += 1;
+			}
+			catch (boost::regex_error e) {
+				std::cerr << "----------------------------------------------------------------------\n";
+				std::cerr << "Skipping File : " << ::curr_file;
+				std::cerr << "\n\t" << e.what();
+				std::cerr << "\n----------------------------------------------------------------------\n\n";
+				noOfErrors += 1;
 			}
 			catch (...) {
-				std::cerr << "Something went wrong while parsing file/writting to a csv file.\n";
+				std::cerr << "Something went wrong...\n~~Exiting~~\n";
+				exit(2);
 			}
-			if (lang1 != nullptr) delete lang1;
-			if (lang2 != nullptr) delete lang2;
 		}
 		else {
-			std::cout << dir1_file << " not found\n";
+			noOfFileNotFound += 1;
+			std::cout << dir1_file << " - not found\n";
 		}
-		std::cout << dir2_file << " - completed\n";
+		jLang = nullptr;
+		if (lang1 != nullptr) delete lang1;
+		if (lang2 != nullptr) delete lang2;
 		dir1_file.erase();
 	}
 	csv.close();
 	std::cout << "\n\t[COMPLETED]\n\t\tTotal files parsed : " << noOfFiles;
-	std::cout << "\n\t\tSkipped files      : " << noOfErrors << std::endl;
-	// if (noOfErrors > 0) std::cout << "    [Note. Check m.errors.log for the errors.]\n";
+	std::cout << "\n\t\tSkipped files      : " << noOfErrors;
+	std::cout << "\n\t\tFiles Not Found    : " << noOfFileNotFound << std::endl;
 	return 0;
 }
 

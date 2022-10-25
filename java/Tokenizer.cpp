@@ -6,6 +6,7 @@
 
 JavaIgnoreGrammar::JavaIgnoreGrammar(): staticShift(0), assignmentShift(0), annotationShift(0),
 										semicolonShift(0), iibShift(0), interfaceShift(0),
+										enumShift(0),
 										ignoreGrammar(JavaIgnoreGrammar::grammar::NONE) { }
 
 void JavaIgnoreGrammar::clearState() {
@@ -15,6 +16,7 @@ void JavaIgnoreGrammar::clearState() {
 	this->semicolonShift = 0;
 	this->interfaceShift = 0;
 	this->iibShift = 0;
+	this->enumShift = 0;
 	this->ignoreGrammar = JavaIgnoreGrammar::grammar::NONE;
 }
 
@@ -25,7 +27,7 @@ void JavaIgnoreGrammar::resetEverything() {
 void JavaIgnoreGrammar::checkStatic(const std::string& token) {
 	int cmp1 = token.compare("static");
 	int cmp2 = token.compare("{");
-	if (this->staticShift == 1 && cmp1 == 0)
+	if (this->staticShift != 0 && cmp1 == 0)
 		throw yy::parser::syntax_error("Error at static keyword (2 static keyword found)");
 	else if (this->staticShift == 0 && cmp1 == 0)
 		this->staticShift = 1;
@@ -38,7 +40,7 @@ void JavaIgnoreGrammar::checkAssignment(const std::string& token) {
 }
 void JavaIgnoreGrammar::checkAnnotation(const std::string& token) {
 	int cmp = token.compare("@");
-	if (this->annotationShift == 1 && cmp == 0)
+	if (this->annotationShift != 0 && cmp == 0)
 		throw yy::parser::syntax_error("Invalid annotation");
 	else if (this->annotationShift == 0 && cmp == 0)
 		this->annotationShift = 1;
@@ -47,7 +49,7 @@ void JavaIgnoreGrammar::checkAnnotation(const std::string& token) {
 }
 void JavaIgnoreGrammar::checkSemicolon(const std::string& token) {
 	int cmp = token.compare(";");
-	if (this->semicolonShift == 1 && cmp == 0)
+	if (this->semicolonShift != 0 && cmp == 0)
 		throw yy::parser::syntax_error("Invalid import statement");
 	else if (this->semicolonShift == 0 && cmp == 0)
 		this->semicolonShift = 1;
@@ -55,7 +57,7 @@ void JavaIgnoreGrammar::checkSemicolon(const std::string& token) {
 void JavaIgnoreGrammar::checkInterface(const std::string& token) {
 	int cmp1 = token.compare("interface");
 	int cmp2 = token.compare("{");
-	if (this->interfaceShift == 1 && cmp1 == 0)
+	if (this->interfaceShift != 0 && cmp1 == 0)
 		throw yy::parser::syntax_error("Error at interface keyword (2 interface keyword found)");
 	else if (this->interfaceShift == 0 && cmp1 == 0)
 		this->interfaceShift = 1;
@@ -68,6 +70,20 @@ void JavaIgnoreGrammar::checkIIB(const std::string& token, size_t tokenBlockSize
 		this->iibShift = 1;
 }
 
+void JavaIgnoreGrammar::checkEnum(const std::string& token) {
+	int cmp1 = token.compare("enum");
+	int cmp2 = token.compare("{");
+	if (this->enumShift != 0 && cmp1 == 0) {
+		throw yy::parser::syntax_error("Error at enum keyword (2 enum keyword found)");
+	}
+	else if (cmp1 == 0) {
+		this->enumShift = 1;
+	}
+	else if (this->enumShift == 1 && cmp2 == 0) {
+		this->enumShift = 2;
+	}
+}
+
 int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockSize) {
 	// Accept and shift tokens
 	checkStatic(token);
@@ -76,6 +92,7 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockS
 	checkSemicolon(token);
 	checkInterface(token);
 	checkIIB(token, tokenBlockSize);
+	checkEnum(token);
 
 
 	// Check accepted grammar
@@ -109,13 +126,19 @@ int JavaIgnoreGrammar::checkGrammar(const std::string &token, size_t tokenBlockS
 		this->ignoreGrammar = JavaIgnoreGrammar::grammar::IIB;
 		return 1;
 	}
+	else if(this->enumShift == 2) {
+		clearState();
+		this->ignoreGrammar = JavaIgnoreGrammar::grammar::Enum;
+		return 1;
+	}
 
 	// Check unaccepted grammar
 	if (token.compare("(") == 0 ||
 		token.compare(")") == 0 ||
 		token.compare("}") == 0 ||
 		(this->staticShift == 0 && token.compare("{") == 0) ||
-		(this->interfaceShift == 0 && token.compare("{") == 0)
+		(this->interfaceShift == 0 && token.compare("{") == 0) ||
+		(this->enumShift == 0 && token.compare("{") == 0)
 	)
 	{
 		clearState();
@@ -143,32 +166,48 @@ bool JavaIgnoreGrammar::isInterface() {
 bool JavaIgnoreGrammar::isIIB() {
 	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::IIB;
 }
+bool JavaIgnoreGrammar::isEnum() {
+	return this->ignoreGrammar == JavaIgnoreGrammar::grammar::Enum;
+}
 
-Tokenizer::Tokenizer() : token_index(0), endTokenItr(std::sregex_iterator()), lineno(0),
-						doBodyRegex(false), innerClass(false) {
-	this->mainContent.assign("(\\/\\*|\\*\\/|\\/\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}(),<>=;@\\[\\]?]|[\\w]+");
-	this->bodyContent.assign("(\\/\\/|\\/\\*|\\*\\/)|\"(?:\\\\.|[^\\\\\"])*\"|'(?:\\\\.|[^\\\\'])*'|[{}]|[^\\s{}\"'/*]+|[*]+(?=\\*\\/)|[*]+");
+Tokenizer::Tokenizer() : token_index(0), endTokenItr(boost::sregex_iterator()),
+						doBodyRegex(false), innerClass(false), takeGenericType(true),
+						checkClass(false) {
+	this->mainContent.assign(MAIN_CONTENT_REGEX);
+	this->bodyContent.assign(BODY_REGEX);
 	this->file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 }
 
 void Tokenizer::setFileName(const char* fileName) {
 	try { this->file.close(); }
 	catch (...) {}
-	this->lineno = 0;
+	Tokenizer::lineno = 0;
 	this->token_index = 0;
 	this->doBodyRegex = false;
 	this->innerClass = false;
+	this->checkClass = false;
+	this->takeGenericType = true;
 	this->data.clear();
+	this->javaFileName.clear();
 	this->token_buffer.clear();
 	this->tokenItr = this->endTokenItr;
 	this->file.open(fileName);
+	this->ignoreGrammar.resetEverything();
+	assignFileName(fileName);
+}
+
+void Tokenizer::assignFileName(const char* fileName) {
+	std::string str(fileName);
+	int indx = str.find_last_of('/') + 1;
+	int to = str.find_last_of('.');
+	this->javaFileName.assign(str.substr(indx, to - indx));
 }
 
 bool Tokenizer::getNewLineM() {
 	try {
 		if (std::getline(this->file, this->data)) {
-			this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
-			this->lineno += 1;
+			this->tokenItr = boost::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
+			Tokenizer::lineno += 1;
 		}
 	}
 	catch (...) {
@@ -179,8 +218,8 @@ bool Tokenizer::getNewLineM() {
 bool Tokenizer::getNewLineB() {
 	try {
 		if (std::getline(this->file, this->data)) {
-			this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
-			this->lineno += 1;
+			this->tokenItr = boost::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
+			Tokenizer::lineno += 1;
 		}
 	}
 	catch (...) {
@@ -203,9 +242,6 @@ void Tokenizer::skipComments(const std::string& token, bool useBodyRegex = false
 					throw yy::parser::syntax_error("Reached end of file while parsing multi comment");
 		}
 		this->tokenItr++;
-	}
-	else {
-		throw InvalidException("Failed to parse comment... (Potentially bug in the code)");
 	}
 }
 
@@ -244,6 +280,7 @@ void Tokenizer::skipAssignment() {
 
 bool Tokenizer::skipAnnotation() {
 	int stack = 0;
+	int takeNextToken = 0;
 	bool annotationWithParam = false;
 	this->tokenItr++;
 	while(true) {
@@ -258,8 +295,13 @@ bool Tokenizer::skipAnnotation() {
 			}
 			else if (this->tokenItr->str(0).compare(")") == 0)
 				stack -= 1;
-			if (stack == 0) break;
+			// For class paths
+			else if (this->tokenItr->str(0).compare(".") == 0)
+				takeNextToken = 2;
+			if (stack == 0 && takeNextToken == 0) break;
 			this->tokenItr++;
+			takeNextToken -= 1;
+			takeNextToken = (takeNextToken < 0) ? 0 : takeNextToken;
 		}
 		else if (!getNewLineM())
 			throw yy::parser::syntax_error("Reached end of file while parsing annotation block");
@@ -275,12 +317,12 @@ std::string Tokenizer::concateTypes() {
 	this->tokenItr++;
 	while (stack > 0) {
 		if (this->tokenItr != this->endTokenItr) {
-			int cmp1 = this->tokenItr->str(1).compare("");
+			/*int cmp1 = this->tokenItr->str(1).compare("");
 			int cmp2 = this->tokenItr->str(2).compare("");
 			int cmp3 = this->tokenItr->str(3).compare("");
 
-			if (cmp1 != 0 || cmp2 != 0 || cmp3 != 0) throw yy::parser::syntax_error("");
-			else if (this->tokenItr->str(0).compare("<") == 0) stack += 1;
+			if (cmp1 != 0 || cmp2 != 0 || cmp3 != 0) throw yy::parser::syntax_error("");*/
+			if (this->tokenItr->str(0).compare("<") == 0) stack += 1;
 			else if (this->tokenItr->str(0).compare(">") == 0) stack -= 1;
 
 			typeStr.append(this->tokenItr->str(0));
@@ -295,7 +337,6 @@ std::string Tokenizer::concateTypes() {
 
 void Tokenizer::appendTypeArray() {
 	const std::string& token = this->tokenItr->str(0);
-	int tf = this->token_buffer.size() - 1;
 	if (token.compare("[") == 0) {
 		this->token_buffer[this->token_buffer.size() - 1].append("[]");
 	}
@@ -317,30 +358,69 @@ void Tokenizer::skipToToken(const char* token) {
 }
 
 bool Tokenizer::addTokenBuffer() {
+	static void (*checkClassPaths)(std::vector<std::string>&, const char *) {
+		[](std::vector<std::string>& arr, const char * str) {
+			if (arr.size() == 0) {
+				arr.push_back(str);
+				return;
+			}
+			std::string& top = arr.at(arr.size() - 1ULL);
+			if (top.at(top.length() - 1) == '.') {
+				top.append(str);
+			}
+			else arr.push_back(str);
+			return;
+		}
+	};
 	if (this->data.length() == 0 && !getNewLineM())
 		return false;
 
 	while (true) {
 		if (this->tokenItr != this->endTokenItr) {
 			if (this->tokenItr->str(1).compare("") != 0)
-				skipComments(this->tokenItr->str(0));
+				skipComments(this->tokenItr->str(0)); // Skip comments
 			else if (this->tokenItr->str(0).compare("<") == 0) {
-				std::string type = concateTypes();
-				this->token_buffer[this->token_buffer.size() - 1].append(type);
-				type.clear();
+				// For Generic Data type or Function
+				// eg. HashMap<int, int>
+				std::string genericType = concateTypes();
+				if (takeGenericType) this->token_buffer.push_back(genericType);
+				else this->token_buffer[this->token_buffer.size() - 1ULL].append(genericType);
+				genericType.clear();
 			}
 			else if (this->tokenItr->str(0).compare("[") == 0 ||
 					this->tokenItr->str(0).compare("]") == 0) {
+				// Array data type
+				// eg. String[]
 				appendTypeArray();
 			}
-			else if (this->tokenItr->str(0).compare("class") == 0 && this->innerClass) {
+			else if (this->tokenItr->str(0).compare("...") == 0) {
+				// Ellipses
+				this->token_buffer[this->token_buffer.size() - 1].append("<...>");
+				this->tokenItr++;
+			}
+			else if(this->tokenItr->str(0).compare(".") == 0) {
+				// Class paths or Inner classes
+				// eg. Bob.ErrorType, org.math.BigInteger
+				this->token_buffer[this->token_buffer.size() - 1].append(1, '.');
+				this->tokenItr++;
+			}
+			else if ((this->tokenItr->str(0).compare("class") == 0 && this->innerClass) || 
+						(this->checkClass && this->tokenItr->str(0).compare(this->javaFileName) != 0)) {
+				// Detect inner classes - Currently inner classes are ignored
+				// class name and File name should be same
+				this->checkClass = false;
 				this->ignoreGrammar.resetEverything();
 				this->token_buffer.clear();
 				skipToToken("{");
 				skipBlock();
 			}
 			else {
-				this->token_buffer.push_back(this->tokenItr->str(0));
+				if (this->tokenItr->str(0).compare("(") == 0 || this->tokenItr->str(0).compare(")") == 0)
+					this->takeGenericType = !this->takeGenericType; // Detect generic type
+				if (this->tokenItr->str(0).compare("class") == 0) this->checkClass = true;
+				else this->checkClass = false;
+				// Check Class paths
+				checkClassPaths(this->token_buffer, this->tokenItr->str(0).c_str());
 				int doIgnore = this->ignoreGrammar.checkGrammar(this->tokenItr->str(0), this->token_buffer.size());
 				if (doIgnore == -1) break;
 				else if (doIgnore == 1) {
@@ -350,6 +430,7 @@ bool Tokenizer::addTokenBuffer() {
 					else if (this->ignoreGrammar.isAnnotation()) skipAnnotation();
 					else if (this->ignoreGrammar.isIIB()) skipBlock();
 					else if (this->ignoreGrammar.isSemicolon()) this->tokenItr++;
+					else if (this->ignoreGrammar.isEnum()) skipBlock();
 				}
 				else this->tokenItr++;
 			}
@@ -377,9 +458,15 @@ TOKENS Tokenizer::get_yylex_token(yy::parser::semantic_type* val, std::string& t
 	else if (token.compare("final") == 0) tokenNo = yy::parser::token::yytokentype::FINAL;
 	else if (token.compare("(") == 0) tokenNo = yy::parser::token::yytokentype::O_PARAM;
 	else if (token.compare(")") == 0) tokenNo = yy::parser::token::yytokentype::C_PARAM;
+	else if (token.compare("extends") == 0) tokenNo = yy::parser::token::yytokentype::EXTENDS;
+	else if (token.compare("implements") == 0) tokenNo = yy::parser::token::yytokentype::IMPLEMENTS;
 	else if (token.compare("class") == 0) {
 		tokenNo = yy::parser::token::yytokentype::T_CLASS;
 		this->innerClass = true;
+	}
+	else if (token[0] == '<' && token[token.length() - 1] == '>') {
+		tokenNo = yy::parser::token::yytokentype::GENERIC;
+		val->str = new std::string(token);
 	}
 	else {
 		tokenNo = yy::parser::token::yytokentype::STRINGS;
@@ -403,7 +490,7 @@ uint64_t* Tokenizer::get_yylex_body() {
 
 	if (this->tokenItr != this->endTokenItr) {
 		this->data.erase(0, this->tokenItr->position());
-		this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
+		this->tokenItr = boost::sregex_iterator(this->data.begin(), this->data.end(), this->bodyContent);
 	}
 	else if (!getNewLineB()) throw yy::parser::syntax_error("End of file reached");
 
@@ -421,11 +508,11 @@ uint64_t* Tokenizer::get_yylex_body() {
 		else if(!getNewLineB()) throw yy::parser::syntax_error("End of file reached");
 		if (braceCount == 0) break;
 	}
-	MurmurHash3_x64_128(body.c_str(), body.length(), 1, hash);
+	MurmurHash3_x64_128(body.c_str(), body.length(), (uint32_t)1, hash);
 	// convert to mainContentRegex
 	if (this->tokenItr != this->endTokenItr) {
 		this->data.erase(0, this->tokenItr->position());
-		this->tokenItr = std::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
+		this->tokenItr = boost::sregex_iterator(this->data.begin(), this->data.end(), this->mainContent);
 	}
 	else this->data.clear();
 	return hash;
@@ -477,12 +564,12 @@ void Tokenizer::closeFile() {
 	catch (...) {}
 }
 
-int Tokenizer::lineNo() {
-	return this->lineno;
-}
-
 bool Tokenizer::classStatus() {
 	return this->innerClass;
+}
+
+size_t Tokenizer::getLineNo() {
+	return Tokenizer::lineno;
 }
 
 Tokenizer::~Tokenizer() {

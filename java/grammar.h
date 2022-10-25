@@ -238,8 +238,11 @@ namespace yy {
         DEFAULT = 272,
         FINAL = 273,
         COMMA = 274,
-        STRINGS = 275,
-        BODY = 276
+        EXTENDS = 275,
+        IMPLEMENTS = 276,
+        STRINGS = 277,
+        GENERIC = 278,
+        BODY = 279
       };
     };
 
@@ -442,7 +445,7 @@ namespace yy {
     static const signed char yydefact_[];
 
     // YYPGOTO[NTERM-NUM].
-    static const signed char yypgoto_[];
+    static const short yypgoto_[];
 
     // YYDEFGOTO[NTERM-NUM].
     static const signed char yydefgoto_[];
@@ -470,7 +473,7 @@ namespace yy {
     static const char* const yytname_[];
 
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-    static const signed char yyrline_[];
+    static const unsigned char yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
     virtual void yy_reduce_print_ (int r);
     /// Print the state stack on the debug stream.
@@ -697,10 +700,10 @@ namespace yy {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 82,     ///< Last index in yytable_.
-      yynnts_ = 10,  ///< Number of nonterminal symbols.
-      yyfinal_ = 18, ///< Termination state number.
-      yyntokens_ = 22  ///< Number of tokens.
+      yylast_ = 140,     ///< Last index in yytable_.
+      yynnts_ = 11,  ///< Number of nonterminal symbols.
+      yyfinal_ = 19, ///< Termination state number.
+      yyntokens_ = 25  ///< Number of tokens.
     };
 
 

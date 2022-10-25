@@ -20,12 +20,14 @@ JavaLang::~JavaLang() {
 
 //~~~~~~~~~~~~ Class JavaClassHeader ~~~~~~~~~~~~
 //
-JavaClassHeader::JavaClassHeader(std::string* p1) : className(*p1), mod(nullptr) { }
+JavaClassHeader::JavaClassHeader(std::string* p1) : className(*p1), mod(nullptr), genericClass(false) { }
 std::string JavaClassHeader::getClassName() {
 	return this->className;
 }
 void JavaClassHeader::setModifier(JavaModifiers* mod) { this->mod = mod; }
+void JavaClassHeader::setGenericClass() { this->genericClass = true; }
 JavaModifiers* JavaClassHeader::getModifiers() { return this->mod; }
+bool JavaClassHeader::isGenericClass() { return this->genericClass; }
 JavaClassHeader::~JavaClassHeader() {
 	this->className.clear();
 	if (this->mod != nullptr) delete this->mod;
@@ -47,8 +49,8 @@ FunctionList::~FunctionList() {
 //~~~~~~~~~~~~ Class JavaFunction ~~~~~~~~~~~~
 //
 JavaFunction::JavaFunction(std::string* p1, std::string* p2) : returnType(*p1), name(*p2),
-															 bodyHash{0,0} { }
-JavaFunction::JavaFunction(std::string* p1) : name(*p1), bodyHash{0,0} { }
+													bodyHash{0,0}, genericFunction(false) { }
+JavaFunction::JavaFunction(std::string* p1) : name(*p1), bodyHash{0,0}, genericFunction(false) { }
 bool JavaFunction::operator<(const JavaFunction& jFunc) const {
 	size_t count1 = this->paramList.size();
 	size_t count2 = jFunc.paramList.size();
@@ -69,7 +71,6 @@ bool JavaFunction::operator<(const JavaFunction& jFunc) const {
 		}
 		return false;
 	}
-	//throw InvalidException();
 }
 void JavaFunction::setJavaModifier(JavaModifiers* jMod) {
 	this->jMod = *jMod;
@@ -77,6 +78,9 @@ void JavaFunction::setJavaModifier(JavaModifiers* jMod) {
 void JavaFunction::setParameters(Parameters* param) {
 	const std::vector<std::string>& val = param->getParameter();
 	this->paramList.assign(val.begin(), val.end());
+}
+void JavaFunction::setGenericFunction() {
+	this->genericFunction = true;
 }
 void JavaFunction::setBodyHash(uint64_t* body) {
 	this->bodyHash[0] = body[0];
@@ -90,6 +94,7 @@ int JavaFunction::cmpBodyHash(const JavaFunction& jFunction) const {
 std::string JavaFunction::getReturnType() const { return this->returnType; }
 std::string JavaFunction::getName() const { return this->name; }
 std::vector<std::string> JavaFunction::getParamList() const { return this->paramList; }
+bool JavaFunction::isGenericFunction() { return this->genericFunction; }
 JavaFunction::~JavaFunction() {
 	this->name.clear();
 	this->returnType.clear();
