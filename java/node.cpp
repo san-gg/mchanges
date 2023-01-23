@@ -119,33 +119,33 @@ Parameters::~Parameters() {
 JavaModifiers::JavaModifiers() {
 	this->jscope.scope = JavaScope::Scope::DEFAULT;
 	this->_static = false;
-	this->synchronized = false;
-	this->native = false;
-	this->strictfp = false;
+	this->_synchronized = false;
+	this->_native = false;
+	this->_strictfp = false;
 	this->_abstract = false;
 	this->_final = false;
 }
 void JavaModifiers::setStatic() { this->_static = true; }
-void JavaModifiers::setSynchronized() { this->synchronized = true; }
-void JavaModifiers::setNative() { this->native = true; }
-void JavaModifiers::setStrictfp() { this->strictfp = true; }
+void JavaModifiers::setSynchronized() { this->_synchronized = true; }
+void JavaModifiers::setNative() { this->_native = true; }
+void JavaModifiers::setStrictfp() { this->_strictfp = true; }
 void JavaModifiers::setAbstract() { this->_abstract = true; }
 void JavaModifiers::setFinal() { this->_final = true; }
 void JavaModifiers::setScope(JavaScope* scope) { this->jscope = scope->scope; }
 JavaScope::Scope JavaModifiers::getScope() { return this->jscope.scope; }
 bool JavaModifiers::isStatic() { return this->_static; }
-bool JavaModifiers::isSynchronized() { return this->synchronized; }
-bool JavaModifiers::isNative() { return this->native; }
-bool JavaModifiers::isStrictfp() { return this->strictfp; }
+bool JavaModifiers::isSynchronized() { return this->_synchronized; }
+bool JavaModifiers::isNative() { return this->_native; }
+bool JavaModifiers::isStrictfp() { return this->_strictfp; }
 bool JavaModifiers::isAbstract() { return this->_abstract; }
 bool JavaModifiers::isFinal() { return this->_final; }
 void JavaModifiers::operator=(JavaModifiers &mod) {
 	this->jscope.scope = mod.getScope();
 	this->_abstract = mod._abstract;
 	this->_static = mod._static;
-	this->native = mod.native;
-	this->strictfp = mod.strictfp;
-	this->synchronized = mod.synchronized;
+	this->_native = mod._native;
+	this->_strictfp = mod._strictfp;
+	this->_synchronized = mod._synchronized;
 }
 
 

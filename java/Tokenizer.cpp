@@ -191,8 +191,8 @@ void Tokenizer::setFileName(const char* fileName) {
 	this->javaFileName.clear();
 	this->token_buffer.clear();
 	this->tokenItr = this->endTokenItr;
-	this->file.open(fileName);
 	this->ignoreGrammar.resetEverything();
+	this->file.open(fileName);
 	assignFileName(fileName);
 }
 

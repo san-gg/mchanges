@@ -85,15 +85,18 @@ private:
 
 	TOKENS get_yylex_token(yy::parser::semantic_type*, std::string&);
 	bool addTokenBuffer();
+
 	void skipComments(const std::string&, bool);
 	void skipBlock();
 	void skipAssignment();
 	void skipToToken(const char*);
-	void appendTypeArray();
 	bool skipAnnotation();
+	
+	void appendTypeArray();
+	bool checkBlockPresent();
+
 	bool getNewLineM();
 	bool getNewLineB();
-	bool checkBlockPresent();
 	void assignFileName(const char*);
 	std::string concateTypes();
 	uint64_t* get_yylex_body();

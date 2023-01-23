@@ -6,8 +6,6 @@
 #include <set>
 #include <vector>
 
-
-
 class JavaScope {
 public:
 	enum class Scope {
@@ -22,9 +20,9 @@ public:
 class JavaModifiers {
 	JavaScope jscope;
 	bool _static;
-	bool synchronized;
-	bool native;
-	bool strictfp;
+	bool _synchronized;
+	bool _native;
+	bool _strictfp;
 	bool _abstract;
 	bool _final;
 public:

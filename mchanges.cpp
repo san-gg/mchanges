@@ -1,4 +1,5 @@
 #include <iostream>
+#include <initializer_list>
 #include <signal.h>
 #include "java/grammar.h"
 #include "java/node.h"
@@ -73,11 +74,20 @@ void printCSV(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv) {
 	}
 }
 
+void printStdError(std::initializer_list<std::string> list) {
+	std::cerr << "----------------------------------------------------------------------\n";
+	for (std::string msg : list) {
+		std::cerr << msg << std::endl;
+	}
+	std::cerr << "----------------------------------------------------------------------\n\n";
+}
+
 int main(int argc, char** argv) {
 	std::ofstream csv;
 	size_t noOfFiles = 0;
 	size_t noOfErrors = 0;
 	size_t noOfFileNotFound = 0;
+	bool somethingWentWrong = false;
 	signal(SIGTERM, SignalHandler);
 	signal(SIGINT, SignalHandler);
 	signal(SIGSEGV, SignalHandler);
@@ -132,10 +142,10 @@ int main(int argc, char** argv) {
 	for (const std::string& dir2_file : files) {
 		JavaLang* lang1 = nullptr;
 		JavaLang* lang2 = nullptr;
+		if (dir2_file.length() == 0) continue;
 		dir1_file.assign(dir1);
 		dir1_file.append(dir2_file.substr(dir2.length()));
 		if (stdfs::exists(dir1_file)) {
-			noOfFiles += 1;
 			try {
 				::curr_file = dir2_file.c_str();
 				parser.setFile(dir2_file.c_str());
@@ -159,39 +169,40 @@ int main(int argc, char** argv) {
 				printCSV(lang1, lang2, csv);
 				
 				std::cout << dir2_file << " - completed\n";
+				noOfFiles += 1;
 			}
 			catch (ParserException& e) {
-				const char* str = e.what();
-				std::string tmp(70, '-');
-				std::cerr << tmp << std::endl;
-				std::cerr << "Error   : " << str << std::endl;
-				std::cerr << "File    : " << ::curr_file << std::endl;
-				std::cerr << "line no : " << Tokenizer::getLineNo() << std::endl;
-				std::cerr << tmp << std::endl;
+				std::string buildError = "Error   : " + std::string(e.what());
+				std::string buildFile = "File    : " + std::string(::curr_file);
+				std::string buildLineNo = "line no : " + std::to_string(Tokenizer::getLineNo());
+				printStdError({ buildError, buildFile, buildLineNo });
+				noOfErrors += 1;
+			}
+			catch (std::ios_base::failure& e) {
+				std::string buildString = "Unable to read the file : " + std::string(::curr_file);
+				printStdError({ buildString });
 				noOfErrors += 1;
 			}
 			catch (std::invalid_argument& e) {
-				std::cerr << "----------------------------------------------------------------------\n";
-				std::cerr << "Something went wrong while parsing.\nFile : " << ::curr_file << std::endl;
-				std::cerr << e.what() << std::endl;
-				std::cerr << "----------------------------------------------------------------------\n\n";
+				std::string buildString = "File : " + std::string(::curr_file);
+				printStdError({ "Something went wrong while parsing.", buildString, e.what() });
 				noOfErrors += 1;
 			}
 			catch (boost::regex_error e) {
-				std::cerr << "----------------------------------------------------------------------\n";
-				std::cerr << "Skipping File : " << ::curr_file;
-				std::cerr << "\n\t" << e.what();
-				std::cerr << "\n----------------------------------------------------------------------\n\n";
+				std::string buildString = "Skipping File : " + std::string(::curr_file);
+				printStdError({ buildString, e.what()});
 				noOfErrors += 1;
 			}
 			catch (...) {
 				std::cerr << "Something went wrong...\n~~Exiting~~\n";
-				exit(2);
+				somethingWentWrong = true;
+				break;
 			}
 		}
 		else {
+			std::string buildString = "File not found : " + dir1_file;
+			printStdError({ buildString });
 			noOfFileNotFound += 1;
-			std::cout << dir1_file << " - not found\n";
 		}
 		jLang = nullptr;
 		if (lang1 != nullptr) delete lang1;
@@ -199,9 +210,16 @@ int main(int argc, char** argv) {
 		dir1_file.erase();
 	}
 	csv.close();
-	std::cout << "\n\t[COMPLETED]\n\t\tTotal files parsed : " << noOfFiles;
+	
+	// Print stats
+	if (somethingWentWrong) std::cout << "\n\t So far ... ";
+	else std::cout << "\n\t[COMPLETED]";
+	std::cout << "\n\t\tTotal files parsed : " << noOfFiles;
 	std::cout << "\n\t\tSkipped files      : " << noOfErrors;
-	std::cout << "\n\t\tFiles Not Found    : " << noOfFileNotFound << std::endl;
+	std::cout << "\n\t\tFiles Not Found    : " << noOfFileNotFound;
+	std::cout << std::endl;
+	
+	if (somethingWentWrong) return 1;
 	return 0;
 }
 
