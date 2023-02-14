@@ -69,8 +69,8 @@ bool JavaFunction::operator<(const JavaFunction& jFunc) const {
 				indx += 1;
 			}
 		}
-		return false;
 	}
+	return false;
 }
 void JavaFunction::setJavaModifier(JavaModifiers* jMod) {
 	this->jMod = *jMod;

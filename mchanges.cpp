@@ -41,8 +41,30 @@ bool fill_exp(std::string& list, std::set<std::string>& expfile) {
 		expfile.insert(tmp);
 	return true;
 }
+//////////////////////////////
+// Seperate class can be managed!!
+void printCSV(const JavaFunction& jf2, std::string &content, std::string& className, std::ofstream& csv) {
+	content.append("\"class    ");
+	content.append(className);
+	content.append("\",\"");
+	content.append(jf2.getReturnType());
+	content.append("    ");
+	content.append(jf2.getName());
+	content.append(" (");
 
-void printCSV(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv) {
+	bool flag = false;
+	const std::vector<std::string>& param = jf2.getParamList();
+	for (std::string tmp : param) {
+		flag = true;
+		content.append(tmp);
+		content.append(", ");
+	}
+	if (flag) content[content.length() - 2] = ')';
+	else content.append(")");
+	content.append("\"\n");
+	csv << content;
+}
+void printReport(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv, int options) {
 	std::string content;
 	std::string className = lang1->getClassHeader()->getClassName();
 	const std::set<JavaFunction>* functions1 = lang1->getFunctionList()->getFunctionList();
@@ -50,29 +72,22 @@ void printCSV(JavaLang* lang1, JavaLang* lang2, std::ofstream& csv) {
 	auto endFunc = functions1->end();
 	for (const JavaFunction& jf2 : *functions2) {
 		auto jf1 = functions1->find(jf2);
-		if ((jf1 != endFunc) && ((*jf1).cmpBodyHash(jf2) != 0)) {
-			content.append("\"class    ");
-			content.append(className);
-			content.append("\",\"");
-			content.append(jf2.getReturnType());
-			content.append("    ");
-			content.append(jf2.getName());
-			content.append(" (");
-
-			bool flag = false;
-			const std::vector<std::string>& param = jf2.getParamList();
-			for (std::string tmp : param) {
-				flag = true;
-				content.append(tmp);
-				content.append(", ");
-			}
-			if(flag) content[content.length() - 1] = ')';
-			content.append("\"\n");
-			csv << content;
-			content.erase();
+		if ((options & 1) &&
+			(jf1 != endFunc) &&
+			(jf1->cmpBodyHash(jf2) != 0))
+		{
+			printCSV(jf2, content, className, csv);
 		}
+		if ((options & 2) &&
+			(jf1 == endFunc))
+		{
+			printCSV(jf2, content, className, csv);
+		}
+		content.erase();
 	}
 }
+
+//////////////////////////////
 
 void printStdError(std::initializer_list<std::string> list) {
 	std::cerr << "----------------------------------------------------------------------\n";
@@ -138,6 +153,9 @@ int main(int argc, char** argv) {
 	JavaParser parser;
 	std::string dir1_file;
 	dir1_file.reserve(1024);
+	int argOptions = argParse.get_options();
+	// Default print changeMethods csv
+	argOptions = argOptions == 0 ? 1 : argOptions;
 	std::cout << "Parsing started...\n";
 	for (const std::string& dir2_file : files) {
 		JavaLang* lang1 = nullptr;
@@ -166,8 +184,9 @@ int main(int argc, char** argv) {
 					delete lang1;
 					continue;
 				}
-				printCSV(lang1, lang2, csv);
 				
+				printReport(lang2, lang1, csv, argOptions);
+
 				std::cout << dir2_file << " - completed\n";
 				noOfFiles += 1;
 			}
